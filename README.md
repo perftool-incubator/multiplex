@@ -53,10 +53,10 @@ Sometimes a user needs more control on how the permutations are generated.  For 
 
 Multiplex will then generate permutations for just "-rw write --ioengine libaio,sync --bs 4k,16k", and then another permutation for just "--rw read --ioengine sync --bs 256k,1024k", yielding:
 
-<pre>--rw write ioengine libaio --bs 4k
---rw write ioengine libaio --bs 16k
---rw write ioengine sync --bs 4k
---rw write ioengine libaio --bs 16k
+<pre>--rw write --ioengine libaio --bs 4k
+--rw write --ioengine libaio --bs 16k
+--rw write --ioengine sync --bs 4k
+--rw write --ioengine libaio --bs 16k
 --rw read --ioengine sync --bs 256k
 --rw read --ioengine sync --bs 1024k</pre>
 
