@@ -11,12 +11,14 @@ Multiplex requires two types of input:
 
 With this, multiplex then provides a list of benchmark options.  For example:
 
-<pre>#multiplex /path/to/benchmark-options.json --opt1 a,b --opt2 c,d
+<pre>#multiplex testing/test1/benchmark.json --this-string a,b --that-string c,d
 
---opt1 a --opt2 c
---opt1 b --opt2 c
---opt1 a --opt2 d
---opt1 b --opt2 d</pre>
+--that-string c --this-string a --use-feature1 0
+--that-string c --this-string b --use-feature1 0
+--that-string d --this-string a --use-feature1 0
+--that-string d --this-string b --use-feature1 0 </pre>
+
+Note that the "--use-feature1" was added because benchmark.json has options in its "mandatory" section which are always included.
 
 ## Implementation Details and other Features
 
@@ -37,19 +39,19 @@ Multiplex also provides for an automatic conversion of values, and these convers
 ### Benchmark Default Options
 Within each of the benchmark's config file are sets of options called "default-sets".  There can be more than one default-set.  Each default-set is a collection of options which are used for specific use-cases.  They are provided as a convenience to the user, and as a "starter" set of options if the user is unfamimliar with the particular bechmark.  To see what default sets are available, just run multiplex this way:
 
-<pre>multiplex /path/to/benchmark-options.json --defaults list</pre>
+<pre>multiplex testing/test1/benchmark.json --defaults list</pre>
 
 This will generate a list of the default-sets for that benchmark, showing the name of each default-set and the options it uses: 
 <pre># defaults available:
-# basic: --rw read,randread --filename /tmp/fio-tst --filesize 256M --runtime 30s --bs 16k --time_based 1
-# nfs: --rw read,randread,write,randwrite --bs 1m --ioengine sync --numjobs 1 --runtime 30s --filesize 512M</pre>
+# full: --this-string a,b,c,d --this-size 1K,256M,1G --run-time 60s,1m,1h
+# basic: --this-string a,b --this-size 256M --run-time 60s</pre>
  One can combine a default-set with their own options.  If a specific option is present in the default-set and also specified by the user, the last ocurrance of that option is what gets used.
 
 
 ### Grouping Options
 Sometimes a user needs more control on how the permutations are generated.  For example, a user running Fio may want to test both sequential reads and sequential writes: "--rw read,write", but the user also needs to use different values for the "--ioengine" option and different values for the "--bs" option depending on what value is used for "--rw".  When "-rw" is testing for "read", the "--ioengine" values tested need to be "sync" and "libaio", and the values for "--bs" need to be "4k" and "16k".   However, when "write" is used for the "--rw" option, only "sync" is needed for "--ioengine" option and "256k" and "1024K" for the "--bs" option.  We need Multiplex to create option permutations on a subset of options, then again on another subset of options.  To restrict which options are used to generate the permutations, separate the options with "--", like the following:
 
-<pre>--rw write --ioengine libaio,sync --bs 4k,16k -- --rw read --ioengine sync --bs 256k,1024k</pre>
+<pre>multiplex /path/to/fio.json --rw write --ioengine libaio,sync --bs 4k,16k -- --rw read --ioengine sync --bs 256k,1024k</pre>
 
 Multiplex will then generate permutations for just "-rw write --ioengine libaio,sync --bs 4k,16k", and then another permutation for just "--rw read --ioengine sync --bs 256k,1024k", yielding:
 
