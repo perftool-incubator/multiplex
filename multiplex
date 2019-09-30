@@ -28,7 +28,7 @@ sub get_defaults_string {
         $defaults_string .= " --" . $this_param . " " . 
             join(",", @{ $$defaults_ref{$this_param} });
     }
-    $defaults_ref =~ s/^\s//;
+    $defaults_string =~ s/^\s//;
     return $defaults_string;
 }
 
@@ -50,10 +50,10 @@ sub get_benchmark_defaults {
     }
 }
 
-# Ensure a parameter's argument can be found and the parameter's values passes the regex requirement
+# Validate the argument is found, the value(s) pass the regex, and any value transformations are done
 # - return nothing if the tests fail
-# - return the argument and values in an array it they pass
-sub process_param {
+# - return the argument and values in an array if they pass
+sub validate_and_transform_param {
     my $argument = shift;
     my $values = shift;
     my $param_ref = shift;
@@ -63,7 +63,9 @@ sub process_param {
             my %past_values;
             # Users can provide multiple values
             # Using quotewords allows commas inside pair of quotes to be part of the value
-            for my $value (quotewords(',', 0, $values)) {
+            my @these_values = quotewords(',', 0, $values);
+            #for my $value (quotewords(',', 0, $values)) {
+            for my $value (@these_values) {
                 if (exists $past_values{$value}) {
                     next;
                 } else {
@@ -72,13 +74,16 @@ sub process_param {
 
                 if ($value =~ /$$param_ref{"requirements"}{$r}{"value_regex"}/) {
                     if (exists $$param_ref{"requirements"}{$r}{"value_transforms"}) {
+                        my $pre_transform_value;
                         for my $transform (@{ $$param_ref{"requirements"}{$r}{"value_transforms"} }) {
+                            $pre_transform_value = $value;
                             # In order to apply the 's/x/y/' regex from the file, some eval trickery
                             # is necessary
                             #
                             # Todo: first test the $transform regex separately for [perl syntax]
                             # errors with eval before doing below
                             $value = eval "\$_='$value'; $transform; return scalar \$_";
+                            die "Transformation of value [" . $pre_transform_value . "] with regex [" . $transform . "] resulted in empty value\n" if (not defined $value or $value eq "");
                         }
                     }
                     # Because these will get processed again by build_iteration_cmds,
@@ -116,13 +121,14 @@ sub build_iteration_cmds {
         my $arg = shift(@args);
         my $values = $multiplex_params{$arg};
         delete $multiplex_params{$arg};
-        # As in process_param, quotewords() allows a comma to be within a single value
+        # As in validate_and_transform_param(), quotewords() allows a comma to be within a single value
         # as long as it is wraped in quotes
         for my $value (quotewords(',', 0, $values)) {
             # Since these params are fully rendered (this will not be passed to
             # multiplex again), we can remove the quotes
             $value =~ s/\"//g;
-            push(@cmds, build_iteration_cmds($cmdline . " --" . $arg . "=" . $value . " ",
+            #push(@cmds, build_iteration_cmds($cmdline . " --" . $arg . " " . $value . " ",
+            push(@cmds, build_iteration_cmds($cmdline . "--" . $arg . " " . $value . " ",
                  \%multiplex_params));
         }
         return @cmds;
@@ -306,17 +312,34 @@ while ( scalar @params > 0 ) {
         for my $p (get_benchmark_args($bench_config_ref)) {
             printf("    --%s\n", $p);
         }
-    } elsif ($param =~ /^--defaults=(.+)$/) { # Expanded to all of the params found for that default
-        @params = (get_benchmark_defaults($bench_config_ref, $1), @params);
-    } elsif ($param =~ /^--(.+)=(.+)$/) { # We now have a parameter, a "--argument=value"
-                                          # that we can process
-        my @p;
-        if (@p = process_param($1, $2, $bench_config_ref)) {
-            $processed_bench_params{$p[0]} = $p[1];
+        #} elsif ($param =~ /^--defaults=(.+)$/) { # Expanded to all of the params found for that default
+        #@params = (split(/\s+/, get_benchmark_defaults($bench_config_ref, $1)), @params);
+    } elsif ($param =~ /^--(.+)/) { # We now have at least a partial parameter, a "--argument"
+        my $arg = "";
+        my $vals = "";
+        if ($param =~ /^--(.+)=(.+)$/) { # We now have a full parameter, a "--argument=value"
+            $arg = $1;
+            $vals = $2;
         } else {
-            printf "The parameter %s did not fit the requirements of the benchmark\n",
-                   $param;
-            exit 1;
+            #if ($param =~ /^--([^=\S]+)$/) { # We need the value from the next in @param
+            if ($param =~ /^--(.+)$/) { # We need the value from the next in @param
+                $arg = $1;
+                $vals = shift @params;
+            } else {
+                printf "The argument %s is not formatted correctly\n", $param;
+            }
+        }
+        if ($arg eq "defaults") {
+            @params = (split(/\s+/, get_benchmark_defaults($bench_config_ref, $vals)), @params);
+        } else {
+            my @p;
+            if (@p = validate_and_transform_param($arg, $vals, $bench_config_ref)) {
+                $processed_bench_params{$p[0]} = $p[1];
+            } else {
+                printf "The parameter %s did not fit the requirements of the benchmark\n",
+                    $param;
+                exit 1;
+            }
         }
     # A "--" terminates a set of options that generate a combination of iterations. One can provide
     # mulitple sets of parameters to generate multiple iterations.  For example, for fio, this
