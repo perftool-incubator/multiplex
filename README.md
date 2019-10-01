@@ -25,7 +25,7 @@ Note that the "--use-feature1" was added because benchmark.json has options in i
 ### Verification and Conversion
 Multiplex provides a bit more than just generating all option permutations for your benchmark.  Since using many options with many values per option can generate potentially hundreds of individual tests, multiplex also provides option verification for your benchmark.  Verifying these options before submitting possibly hundreds of benchmark executions can save time if you happen to have an error in your test plan.
 
-Within the benchmark-specific config file, options are categorized into groups, each group having a regular-expression that the option's *values* must adhere to.  For example, for the Fio benchmark, the options below all have their values verified with regex  "[0-9]+[kmgKMG]":
+Within the benchmark-specific config file, options are categorized into groups, each group having a regular-expression that the option's *values* must adhere to.  For example, for the Fio benchmark [1], the options below all have their values verified with regex  "[0-9]+[kmgKMG]":
 
 <pre>--bs
 --filesize
@@ -73,9 +73,17 @@ This will result in the following permutations:
 --iodepth 16  --iodepth_batch_complete_max 16</pre>
 
 ## Installation
+### Dependencies
 Multiplex is written in Perl and requires these modules:
 <pre>Text::ParseWords
 JSON::XS
 Data::Dumper</pre>
 
-If these modules are not installed in the default location, define the environment variable MULTIPLEX_LIB with the path where these modules are installed.
+If these modules are not installed in the default location, add the necessary library path to the existing PERL5_INC environment variable.
+
+### Benchmarks
+Mulitplex does not include benchmark config files, except config files of made-up benchmarks for unit-testing.  To use a real benchmark config file, see the following benchmark projects in the perftool-incubator organization:
+
+[1] Fio
+
+
