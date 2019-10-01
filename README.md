@@ -84,6 +84,4 @@ If these modules are not installed in the default location, add the necessary li
 ### Benchmarks
 Mulitplex does not include benchmark config files, except config files of made-up benchmarks for unit-testing.  To use a real benchmark config file, see the following benchmark projects in the perftool-incubator organization:
 
-[1] Fio
-
-
+[1] Fio  https://github.com/perftool-incubator/fio
