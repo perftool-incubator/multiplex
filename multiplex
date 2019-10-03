@@ -137,116 +137,116 @@ sub build_iteration_cmds {
     }
 }
 
-# process iparams (internal parameters) that this script is
-# responsible for substituting in the cmds
-sub handle_iparams {
+# Shared-values are a list of values that belong to mulitple
+# parameters.  Shared-values are defined by using square brackets:
+# --[shared-value-name]=<value1,value2,value3>
+# or
+# --[shared-value-name] <value1,value2,value3>
+# Shared-values are then assigned to a parameter via:
+# --<param1>=[shared-value-name]
+# or
+# --<param1>=[shared-value-name]
+#
+# Shared-values result in generating benchmark commands where each command
+# have parameters using the which don't
+# have the value differ between these parameters within a single 
+# benchmark command, for example:
+#
+# mulitplex <benchmark.config> --[myval]=1,2 --opt1=[myval] --opt2[myval]
+# --opt1=1 opt2=1
+# --opt1=2 opt2=2
+#
+sub handle_shared_values {
     my @ARGS = @_;
 
     my %param_sets;
     my @params;
 
-    # build the iteration parameter sets and their associated iparams
+    # build the iteration parameter sets and their associated shared_values
     my $current_param_set = 0;
     for my $param (@ARGS) {
-    if (! exists($param_sets{$current_param_set})) {
-        $param_sets{$current_param_set} = { };
-        $param_sets{$current_param_set}{'iparams'} = [];
-        $param_sets{$current_param_set}{'params'}  = [];
-    }
-
-    if ($param eq "--") {
-        push(@{$param_sets{$current_param_set}{'params'}}, "--defaults=mandatory");
-        push(@{$param_sets{$current_param_set}{'params'}}, "--");
-        $current_param_set++;
-    } elsif ($param =~ /^--\[.+\]/) {
-        push(@{$param_sets{$current_param_set}{'iparams'}}, $param);
-    } else {
-        push(@{$param_sets{$current_param_set}{'params'}}, $param);
+        if (! exists($param_sets{$current_param_set})) {
+            $param_sets{$current_param_set} = { };
+            $param_sets{$current_param_set}{'iparams'} = [];
+            $param_sets{$current_param_set}{'params'}  = [];
         }
-            }
 
-            # loop until all iparams have been processed, once an iparam is
-            # found and processed the process needs to start over to ensure
-            # that proper handling of multiple iparams is done -- if there are
-            # multiple iparams in an parameter set then each iparam (and it's
-            # values) are handled one at time.  when an iparam is handled a
-            # new parameter set is created for each of the iparam's values.
-            # the new parameter sets include any remaining iparams and the same
-            # process will be done to them on a future pass
-            my $do_work = 1;
-            while ($do_work) {
-            $do_work = 0;
-
-            foreach my $param_hkey (sort { $a <=> $b } (keys %param_sets)) {
-                if (scalar(@{$param_sets{$param_hkey}{'iparams'}})) {
+        if ($param eq "--") {
+            push(@{$param_sets{$current_param_set}{'params'}}, "--defaults=mandatory");
+            push(@{$param_sets{$current_param_set}{'params'}}, "--");
+            $current_param_set++;
+        } elsif ($param =~ /^--\[.+\]/) {
+            push(@{$param_sets{$current_param_set}{'iparams'}}, $param);
+        } else {
+            push(@{$param_sets{$current_param_set}{'params'}}, $param);
+        }
+    }
+    # loop until all iparams have been processed, once an iparam is
+    # found and processed the process needs to start over to ensure
+    # that proper handling of multiple iparams is done -- if there are
+    # multiple iparams in an parameter set then each iparam (and it's
+    # values) are handled one at time.  when an iparam is handled a
+    # new parameter set is created for each of the iparam's values.
+    # the new parameter sets include any remaining iparams and the same
+    # process will be done to them on a future pass
+    my $do_work = 1;
+    while ($do_work) {
+        $do_work = 0;
+        foreach my $param_hkey (sort { $a <=> $b } (keys %param_sets)) {
+            if (scalar(@{$param_sets{$param_hkey}{'iparams'}})) {
                 my $iparam = shift(@{$param_sets{$param_hkey}{'iparams'}});
-
                 $iparam =~ m/^--(\[.+\])=(.+)$/;
                 my $iparam_key = $1;
                 my $iparam_value = $2;
-
                 $iparam_key =~ m/\[(.+)\]/;
                 my $iparam_name = $1;
-
                 # make sure that the iparam is actually used somewhere
                 my $iparam_match = 0;
                 for my $param (@{$param_sets{$param_hkey}{'params'}}) {
                     if ($param eq "--") {
-                    next;
+                        next;
                     }
-
                     $param =~ m/^--(.+)=(.+)$/;
                     my $param_key = $1;
                     my $param_value = $2;
-
                     if ($param_value =~ /\[$iparam_name\]/) {
-                    $iparam_match = 1;
-                    last;
+                        $iparam_match = 1;
+                        last;
                     }
                 }
-
                 if ($iparam_match) {
                     # for each iparam iteration value that is found
                     # create a new parameter set
                     for my $iparam_iter_value (quotewords(',', 0, $iparam_value)) {
-                    $param_sets{$current_param_set} = { };
-                    $param_sets{$current_param_set}{'iparams'} = [];
-                    $param_sets{$current_param_set}{'params'}  = [];
-
-                    push(@{$param_sets{$current_param_set}{'iparams'}},
-                        @{$param_sets{$param_hkey}{'iparams'}});
-
-                    for my $param(@{$param_sets{$param_hkey}{'params'}}) {
-                        if ($param eq "--") {
-                        push(@{$param_sets{$current_param_set}{'params'}}, $param);
-                        next;
+                        $param_sets{$current_param_set} = { };
+                        $param_sets{$current_param_set}{'iparams'} = [];
+                        $param_sets{$current_param_set}{'params'}  = [];
+                        push(@{$param_sets{$current_param_set}{'iparams'}},
+                            @{$param_sets{$param_hkey}{'iparams'}});
+                        for my $param(@{$param_sets{$param_hkey}{'params'}}) {
+                            if ($param eq "--") {
+                                push(@{$param_sets{$current_param_set}{'params'}}, $param);
+                                next;
+                            }
+                            $param =~ m/^(--.+)=(.+)$/;
+                            my $param_key = $1;
+                            my $param_value = $2;
+                            # substituate the iparam value as many
+                            # times as required in the parameter value
+                            $param_value =~ s/\[$iparam_name\]/$iparam_iter_value/g;
+                            push(@{$param_sets{$current_param_set}{'params'}},
+                            $param_key . "=" . $param_value);
                         }
-
-                        $param =~ m/^(--.+)=(.+)$/;
-                        my $param_key = $1;
-                        my $param_value = $2;
-
-                        # substituate the iparam value as many
-                        # times as required in the parameter value
-                        $param_value =~ s/\[$iparam_name\]/$iparam_iter_value/g;
-
-                        push(@{$param_sets{$current_param_set}{'params'}},
-                        $param_key . "=" . $param_value);
+                        $current_param_set++;
                     }
-
-                    $current_param_set++;
-                    }
-
                     # run the loop again in case there are additional
                     # iparams to process -- the newly created
                     # parameter sets may have additional iparams
                     $do_work = 1;
-
                     # now that this parameter set has been processed
                     # (and new parameter sets created) it can be
                     # removed
                     delete $param_sets{$param_hkey};
-
                     # only process one iparam at a time before
                     # starting over so break out of the loop
                     last;
@@ -271,6 +271,22 @@ if (scalar @ARGV < 2) {
     exit;
 }
 my $bench_config_file = shift(@ARGV);
+my $json_text = "";
+if (open(JSON_FH, $bench_config_file)) {
+    while ( <JSON_FH> ) {
+        $json_text .= $_;
+    }
+    close JSON_FH;
+} else {
+    printf "Could not open file %s\n", $bench_config_file;
+    if ($bench_config_file =~ /^--.+/) {
+        printf "Did you forget to provide the benchmark config file? \"%s\" does not look " .
+               "like a file, but a benchmark option\n", $bench_config_file;
+    }
+    die;
+}
+my $bench_config_ref  = $coder->decode($json_text); 
+
 
 # If the very next argument is "--defaults-only" then expand any "--defaults="
 # and do nothing else.
@@ -287,14 +303,6 @@ if ($ARGV[0] eq "--defaults-only") {
 #   - each of the val[,val] must pass the format requirements and also might
 #     get transformed
 
-open(JSON_FH, $bench_config_file) || die("Could not open file $bench_config_file\n");
-my $json_text = "";
-while ( <JSON_FH> ) {
-    $json_text .= $_;
-}
-close JSON_FH;
-my $bench_config_ref  = $coder->decode($json_text);
-
 my @cmds;
 my %processed_bench_params; # Benchmark-specific parameters that will have been validated/transformed
 # Add a final params termination (--) if one is not present
@@ -302,7 +310,7 @@ if ($ARGV[-1] ne "--") {
     push(@ARGV, "--");
 }
 
-my @params = handle_iparams(@ARGV);
+my @params = handle_shared_values(@ARGV);
 
 # Now process all of the parameters
 while ( scalar @params > 0 ) {
