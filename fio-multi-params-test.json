@@ -1,0 +1,18 @@
+[
+    { "arg": "bs", "values": [ "4k", "8k" ] },
+    { "arg": "rw", "values": [ "read", "write", "randread", "randwrite" ] },
+    { "arg": "ioengine", "values": [ "libaio" ]},
+    { "arg": "iodepth", "values": [ "1", "4", "8", "12", "16", "20" ]},
+    { "arg": "bs", "values": [ "4k", "8k", "16k", "32k", "64k", "128k", "256k" ]},
+    { "arg": "norandommap", "values": [ "" ]},
+    { "arg": "time_based", "values": [ "1" ]},
+    { "arg": "runtime", "values": [ "120" ]},
+    { "arg": "ramp_time", "values": [ "5" ]},
+    { "arg": "size", "values": [ "10g" ]},
+    { "arg": "clocksource", "values": [ "gettimeofday" ]},
+    { "arg": "iodepth_batch_complete_min", "values": [ "1" ]},
+    { "arg": "iodepth_batch_submit", "values": [ "0" ]},
+    { "arg": "filename", "values": [ "/dev/pmem1" ]},
+    { "arg": "numa_cpu_nodes", "values": [ "1" ]},
+    { "arg": "numa_mem_policy", "values": [ "local" ]}
+]
