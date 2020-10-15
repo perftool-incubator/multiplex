@@ -2,26 +2,41 @@ package main
 
 /*
 Read some multi-value params in JSON like:
-[
-    { 'arg': 'rw', 'values': [ 'read', 'randread' ] },
-    { 'arg': 'bs', 'values': [ '4k', '8k' ] }
-]
+{
+    "common": [
+        { "arg": "runtime", "values": [ "60s" ] }
+    ],
+    "sets": [
+        [
+            { "arg": "bs", "values": [ "4k", "8k" ] },
+            { "arg": "rw", "values": [ "read", "write" ] }
+        ],
+        [
+            { "arg": "bs", "values": [ "16k", "32k" ] },
+            { "arg": "rw", "values": [ "randread", "randwrite" ] }
+        ]
+    ]
+}
 
 And outupt mulitplexed, single-value params JSON like:
 [
     [
+        { "arg": "runtime", "value": "60s" },
         { 'arg': 'rw', 'value': 'read' },
         { 'arg': 'bs', 'value': '4k' }
     ],
     [
+        { "arg": "runtime", "value": "60s" },
         { 'arg': 'rw', 'value': 'read' },
         { 'arg': 'bs', 'value': '8k' }
     ],
     [
+        { "arg": "runtime", "value": "60s" },
         { 'arg': 'rw', 'value': 'randread' },
         { 'arg': 'bs', 'value': '4k' }
     ],
     [
+        { "arg": "runtime", "value": "60s" },
         { 'arg': 'rw', 'value': 'randread' },
         { 'arg': 'bs', 'value': '8k' }
     ]
@@ -37,21 +52,22 @@ import (
 )
 // sv = single-value
 // mv = multi-value
-type mvParamType struct {
-    Arg string `json:"arg"`
-    Values []string `json:"values"`
-}
-type mvParamSetType []mvParamType
 type svParamType struct {
     Arg string `json:"arg"`
     Value string `json:"value"`
 }
 type svParamSetType []svParamType
 type svParamSetsType []svParamSetType
-
-type Employee struct {
-    id   int
-    name string
+type valuesType []string
+type mvParamType struct {
+    Arg string `json:"arg"`
+    Values valuesType `json:"values"`
+}
+type mvParamSetType []mvParamType
+type mvParamSetsType []mvParamSetType
+type inputParamType struct {
+    Common mvParamSetType `json:"common"`
+    Sets mvParamSetsType `json:"sets"`
 }
 
 func buildSingleValParamSets(multiValParams mvParamSetType) svParamSetsType {
@@ -77,14 +93,13 @@ func buildSingleValParamSets(multiValParams mvParamSetType) svParamSetsType {
 func main() {
     validate := false
     data, _ := ioutil.ReadAll(os.Stdin)
-    inputParams := mvParamSetType{}
+    inputParams := inputParamType{}
     merr := json.Unmarshal([]byte(data),&inputParams)
     if merr != nil {
-        //fmt.Println(merr)
-    //} else {
-        fmt.Printf("json conversion error:%v\n", merr)
+        fmt.Printf("Error reading input:\n")
+        fmt.Println(merr)
+        return
     }
-    //fmt.Printf("%v\n", inputParams)
 
     if validate {
         documentLoader := gojsonschema.NewGoLoader(inputParams)
@@ -94,8 +109,6 @@ func main() {
             panic(err.Error())
         }
         if ! result.Valid() {
-            //fmt.Printf("The document is valid\n")
-        //} else {
             fmt.Printf("The document is not valid. see errors :\n")
             for _, desc := range result.Errors() {
                 fmt.Printf("- %s\n", desc)
@@ -105,7 +118,26 @@ func main() {
     }
 
     var svps svParamSetsType
-    svps = buildSingleValParamSets(inputParams)
+    for _, multiValParamSet := range inputParams.Sets {
+        // Aggregate the "combined" multi-val params with one of the "Sets"
+        // into a map in order to avoid duplicates.
+        m := make(map[string]valuesType)
+        for _, thisMvParam := range inputParams.Common {
+            m[thisMvParam.Arg] = thisMvParam.Values
+        }
+        for _, thisMvParam := range multiValParamSet {
+            m[thisMvParam.Arg] = thisMvParam.Values
+        }
+        // Now put back in a multi-val param-set to expand
+        var mvParamSet mvParamSetType
+        for thisArg, _ := range m {
+            var mvParam mvParamType
+            mvParam.Arg = thisArg
+            mvParam.Values = m[thisArg]
+            mvParamSet  = append(mvParamSet, mvParam)
+        }
+        svps = append(svps,buildSingleValParamSets(mvParamSet)...)
+    }
     b, err := json.MarshalIndent(svps, "", "    ")
     if err == nil {
         fmt.Println(string(b))
