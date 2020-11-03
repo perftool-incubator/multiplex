@@ -1,44 +1,44 @@
 package main
 
 /*
-Read some multi-value params in JSON like:
+Read some multi-val params in JSON like:
 {
     "common": [
-        { "arg": "runtime", "values": [ "60s" ] }
+        { "arg": "runtime", "vals": [ "60s" ] }
     ],
     "sets": [
         [
-            { "arg": "bs", "values": [ "4k", "8k" ] },
-            { "arg": "rw", "values": [ "read", "write" ] }
+            { "arg": "bs", "vals": [ "4k", "8k" ] },
+            { "arg": "rw", "vals": [ "read", "write" ] }
         ],
         [
-            { "arg": "bs", "values": [ "16k", "32k" ] },
-            { "arg": "rw", "values": [ "randread", "randwrite" ] }
+            { "arg": "bs", "vals": [ "16k", "32k" ] },
+            { "arg": "rw", "vals": [ "randread", "randwrite" ] }
         ]
     ]
 }
 
-And outupt mulitplexed, single-value params JSON like:
+And outupt mulitplexed, single-val params JSON like:
 [
     [
-        { "arg": "runtime", "value": "60s" },
-        { 'arg': 'rw', 'value': 'read' },
-        { 'arg': 'bs', 'value': '4k' }
+        { "arg": "runtime", "val": "60s" },
+        { 'arg': 'rw', 'val': 'read' },
+        { 'arg': 'bs', 'val': '4k' }
     ],
     [
-        { "arg": "runtime", "value": "60s" },
-        { 'arg': 'rw', 'value': 'read' },
-        { 'arg': 'bs', 'value': '8k' }
+        { "arg": "runtime", "val": "60s" },
+        { 'arg': 'rw', 'val': 'read' },
+        { 'arg': 'bs', 'val': '8k' }
     ],
     [
-        { "arg": "runtime", "value": "60s" },
-        { 'arg': 'rw', 'value': 'randread' },
-        { 'arg': 'bs', 'value': '4k' }
+        { "arg": "runtime", "val": "60s" },
+        { 'arg': 'rw', 'val': 'randread' },
+        { 'arg': 'bs', 'val': '4k' }
     ],
     [
-        { "arg": "runtime", "value": "60s" },
-        { 'arg': 'rw', 'value': 'randread' },
-        { 'arg': 'bs', 'value': '8k' }
+        { "arg": "runtime", "val": "60s" },
+        { 'arg': 'rw', 'val': 'randread' },
+        { 'arg': 'bs', 'val': '8k' }
     ]
 ]
 */
@@ -50,18 +50,18 @@ import (
     "io/ioutil"
     "github.com/xeipuuv/gojsonschema"
 )
-// sv = single-value
-// mv = multi-value
+// sv = single-val
+// mv = multi-val
 type svParamType struct {
     Arg string `json:"arg"`
-    Value string `json:"value"`
+    Val string `json:"val"`
 }
 type svParamSetType []svParamType
 type svParamSetsType []svParamSetType
-type valuesType []string
+type valsType []string
 type mvParamType struct {
     Arg string `json:"arg"`
-    Values valuesType `json:"values"`
+    Vals valsType `json:"vals"`
 }
 type mvParamSetType []mvParamType
 type mvParamSetsType []mvParamSetType
@@ -74,16 +74,16 @@ func buildSingleValParamSets(multiValParams mvParamSetType) svParamSetsType {
     var singleValParamSets svParamSetsType
     if len(multiValParams) > 1 {
         multiValParam, multiValParams := multiValParams[0], multiValParams[1:]
-	    for _, val := range multiValParam.Values {
+	    for _, val := range multiValParam.Vals {
             thisSingleValParamSets := buildSingleValParamSets(multiValParams)
             for _, thisSingleValParamSet := range thisSingleValParamSets {
-                thisSingleValParamSet = append(thisSingleValParamSet, svParamType{Arg: multiValParam.Arg, Value: val,})
+                thisSingleValParamSet = append(thisSingleValParamSet, svParamType{Arg: multiValParam.Arg, Val: val,})
                 singleValParamSets = append(singleValParamSets, thisSingleValParamSet)
             }
 	    }
     } else {
-	    for _, val := range multiValParams[0].Values {
-            singleValParamSet := svParamSetType{svParamType{Arg: multiValParams[0].Arg, Value: val,}}
+	    for _, val := range multiValParams[0].Vals {
+            singleValParamSet := svParamSetType{svParamType{Arg: multiValParams[0].Arg, Val: val,}}
             singleValParamSets = append(singleValParamSets, singleValParamSet)
         }
     }
@@ -121,19 +121,19 @@ func main() {
     for _, multiValParamSet := range inputParams.Sets {
         // Aggregate the "combined" multi-val params with one of the "Sets"
         // into a map in order to avoid duplicates.
-        m := make(map[string]valuesType)
+        m := make(map[string]valsType)
         for _, thisMvParam := range inputParams.Common {
-            m[thisMvParam.Arg] = thisMvParam.Values
+            m[thisMvParam.Arg] = thisMvParam.Vals
         }
         for _, thisMvParam := range multiValParamSet {
-            m[thisMvParam.Arg] = thisMvParam.Values
+            m[thisMvParam.Arg] = thisMvParam.Vals
         }
         // Now put back in a multi-val param-set to expand
         var mvParamSet mvParamSetType
         for thisArg, _ := range m {
             var mvParam mvParamType
             mvParam.Arg = thisArg
-            mvParam.Values = m[thisArg]
+            mvParam.Vals = m[thisArg]
             mvParamSet  = append(mvParamSet, mvParam)
         }
         svps = append(svps,buildSingleValParamSets(mvParamSet)...)
