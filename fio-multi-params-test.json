@@ -1,18 +1,67 @@
-[
-    { "arg": "bs", "values": [ "4k", "8k" ] },
-    { "arg": "rw", "values": [ "read", "write", "randread", "randwrite" ] },
-    { "arg": "ioengine", "values": [ "libaio" ]},
-    { "arg": "iodepth", "values": [ "1", "4", "8", "12", "16", "20" ]},
-    { "arg": "bs", "values": [ "4k", "8k", "16k", "32k", "64k", "128k", "256k" ]},
-    { "arg": "norandommap", "values": [ "" ]},
-    { "arg": "time_based", "values": [ "1" ]},
-    { "arg": "runtime", "values": [ "120" ]},
-    { "arg": "ramp_time", "values": [ "5" ]},
-    { "arg": "size", "values": [ "10g" ]},
-    { "arg": "clocksource", "values": [ "gettimeofday" ]},
-    { "arg": "iodepth_batch_complete_min", "values": [ "1" ]},
-    { "arg": "iodepth_batch_submit", "values": [ "0" ]},
-    { "arg": "filename", "values": [ "/dev/pmem1" ]},
-    { "arg": "numa_cpu_nodes", "values": [ "1" ]},
-    { "arg": "numa_mem_policy", "values": [ "local" ]}
-]
+{
+    "common": [
+	{
+	    "name": "global",
+	    "params": [
+		{ "arg": "bs", "vals": [ "4k", "8k" ] },
+		{ "arg": "norandommap", "vals":  [ "ON" ] },
+		{ "arg": "time_based", "vals": [ "1" ] },
+		{ "arg": "runtime", "vals": [ "120" ] },
+		{ "arg": "ramp_time", "vals": [ "5" ] },
+		{ "arg": "size", "vals": [ "10g" ] },
+		{ "arg": "clocksource", "vals": [ "gettimeofday" ] },
+		{ "arg": "filename", "vals": [ "/dev/foobar" ] },
+		{ "arg": "direct", "vals": [ "1" ] },
+		{ "arg": "sync", "vals": [ "0" ] },
+		{ "arg": "jobfile", "vals": [ "EMPTY_JOB_FILE" ] }
+	    ]
+	},
+	{
+	    "name": "crucible-defaults",
+	    "params": [
+		{ "arg": "write_hist_log", "vals": ["fio"] },
+		{ "arg": "log_hist_msec", "vals": ["10000"] },
+		{ "arg": "write_bw_log", "vals": ["fio"] },
+		{ "arg": "write_iops_log", "vals": ["fio"] },
+		{ "arg": "write_lat_log", "vals": ["fio"] },
+		{ "arg": "log_avg_msec", "vals": ["1000"] },
+		{ "arg": "log_unix_epoch", "vals": ["1"] },
+		{ "arg": "output-format", "vals": ["json"] },
+		{ "arg": "output", "vals": ["fio-result.json"] }
+	    ]
+	},
+	{
+	    "name": "jobs",
+	    "params": [
+		{ "arg": "name", "vals": [ "job1" ] }
+	    ]
+	}
+    ],
+    "sets": [
+	[
+	    { "common": "global" },
+	    { "common": "crucible-defaults" },
+
+	    { "arg": "rw", "vals": [ "read", "write", "randread", "randwrite" ] },
+	    { "arg": "ioengine", "vals": [ "sync" ] },
+	    { "arg": "iodepth", "vals": [ "1" ] },
+	    { "arg": "numjobs", "vals": [ "1", "4", "8", "12", "16", "20" ] },
+
+	    { "common": "jobs" }
+	],
+	[
+	    { "common": "global" },
+	    { "common": "crucible-defaults" },
+
+	    { "arg": "rw", "vals": [ "randrw" ] },
+	    { "arg": "ioengine", "vals": [ "sync" ] },
+	    { "arg": "iodepth", "vals": [ "1" ] },
+	    { "arg": "numjobs", "vals": [ "1", "4", "8", "12", "16", "20" ] },
+	    { "arg": "rwmixread", "vals": [ "60" ] },
+	    { "arg": "rwmixwrite", "vals": [ "40" ] },
+	    { "arg": "percentage_random", "vals": [ "100,80" ] },
+
+	    { "common": "jobs" }
+	]
+    ]
+}
