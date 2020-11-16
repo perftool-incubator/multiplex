@@ -3,6 +3,10 @@
 import json
 import argparse
 import copy
+import traceback
+import os
+
+from jsonschema import validate
 
 
 class t_global(object):
@@ -113,10 +117,26 @@ def main():
         input_json = json.load(input_fp)
         input_fp.close()
     except:
+        print("EXCEPTION: %s" % (traceback.format_exc()))
         print("ERROR: Could not load input file %s" % (t_global.args.input))
         return(1)
 
-    # validate the json here
+    json_schema_file = "%s/%s" % (os.path.dirname(os.path.abspath(__file__)), "schema.json")
+    try:
+        schema_fp = open(json_schema_file, 'r')
+        schema_contents = json.load(schema_fp)
+        schema_fp.close()
+    except:
+        print("EXCEPTION: %s" % (traceback.format_exc()))
+        print("ERROR: Could not load a valid JSON schema from %s" % (json_schema_file))
+        return(2)
+
+    try:
+        validate(instance = input_json, schema = schema_contents)
+    except:
+        print("EXCEPTION: %s" % (traceback.format_exc()))
+        print("ERROR: JSON validation failed for %s using schema %s" % (t_global.args.input, json_schema_file))
+        return(3)
 
     combined_json = handle_common(input_json)
     multiplexed_json = multiplex_sets(combined_json)
