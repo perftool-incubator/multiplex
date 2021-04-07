@@ -1,2 +1,0 @@
-Could not open file --that-string="b,c",d,"e,f"
-Did you forget to provide the benchmark config file? "--that-string="b,c",d,"e,f"" does not look like a file, but a benchmark option

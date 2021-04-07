@@ -1,0 +1,17 @@
+{
+    "common": [
+    {
+        "name": "global",
+        "params": [
+        { "arg": "bs", "vals": [ "4k", "8k" ] },
+        { "arg": "rw", "vals": [ "read", "write" ] }
+        ]
+    }
+    ],
+    "sets": [
+    [
+        { "common": "global" },
+        { "arg": "ioengine", "vals": [ "sync" ] }
+    ]
+    ]
+}
