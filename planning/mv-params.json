@@ -1,0 +1,151 @@
+the user submits something that has this format:
+
+{
+    "includes": [
+	{
+	    "name": "common",
+	    "params": [
+		{ "arg": "foo", "vals": [ "val1", "val2" ], "role": "all" },
+		{ "arg": "bar", "vals": [ "val3", "val4" ], "role": "client" }
+	    ]
+	},
+	{
+	    "name": "scenario1",
+	    "params": [
+		{ "arg": "zorg", "vals": [ "val5", "val6" ], "role": "server" },
+		{ "arg": "alpha", "vals": [ "val7", "val8" ], "role": "infra" }
+	    ]
+	},
+	{
+	    "name": "scenario2",
+	    "params": [
+		{ "arg": "beta", "vals": [ "val9", "val10" ], "role": "all" }
+	    ]
+	}
+    ],
+    "sets": [
+	[
+	    { "include": "common" },
+	    { "include": "scenario1" },
+	    { "arg": "gamma", "vals": [ "val11" ], "role": "client" }
+	],
+	[
+	    { "include": "common" },
+	    { "include": "scenario2" },
+	    { "arg": "delta", "vals": [ "val12", "val13" ], "role": "infra" }
+	],
+	[
+	    { "include": "common" },
+	    { "arg": "epsilon", "vals": [ "val14" ] }
+	]
+    ]
+}
+
+first the includes are substituted into the sets resulting in these sets:
+
+{
+    "sets":[
+	[
+	    { "arg": "foo", "vals": [ "val1", "val2" ], "role": "all" },
+	    { "arg": "bar", "vals": [ "val3", "val4" ], "role": "client" },
+	    { "arg": "zorg", "vals": [ "val5", "val6" ], "role": "server" },
+	    { "arg": "alpha", "vals": [ "val7", "val8" ], "role": "infra" },
+	    { "arg": "gamma", "vals": [ "val11" ], "role": "client" }
+	],
+	[
+	    { "arg": "foo", "vals": [ "val1", "val2" ], "role": "all" },
+	    { "arg": "bar", "vals": [ "val3", "val4" ], "role": "client" },
+	    { "arg": "beta", "vals": [ "val9", "val10" ], "role": "all" },
+	    { "arg": "delta", "vals": [ "val12", "val13" ], "role": "infra" },
+	],
+	[
+	    { "arg": "foo", "vals": [ "val1", "val2" ], "role": "all" },
+	    { "arg": "bar", "vals": [ "val3", "val4" ], "role": "client" },
+	    { "arg": "epsilon", "vals": [ "val14" ] }
+	]
+    ]
+}
+
+then the args are multiplexed within each set to create all the possible permutations:
+
+[
+    // start set 1 permutations
+    [
+	{ "arg": "foo", "val": "val1", "role": "all" },
+	{ "arg": "bar", "val": "val3", "role": "client" },
+	{ "arg": "zorg", "val": "val5", "role": "server" },
+	{ "arg": "alpha", "val": "val7", "role": "infra" },
+	{ "arg": "gamma", "val": "val11", "role": "client" }
+    ],
+    [
+	{ "arg": "foo", "val": "val2", "role": "all" },
+	{ "arg": "bar", "val": "val3", "role": "client" },
+	{ "arg": "zorg", "val": "val5", "role": "server" },
+	{ "arg": "alpha", "val": "val7", "role": "infra" },
+	{ "arg": "gamma", "val": "val11", "role": "client" }
+    ],
+    [
+	{ "arg": "foo", "val": "val1", "role": "all" },
+	{ "arg": "bar", "val": "val4", "role": "client" },
+	{ "arg": "zorg", "val": "val5", "role": "server" },
+	{ "arg": "alpha", "val": "val7", "role": "infra" },
+	{ "arg": "gamma", "val": "val11", "role": "client" }
+    ],
+    [
+	{ "arg": "foo", "val": "val2", "role": "all" },
+	{ "arg": "bar", "val": "val4", "role": "client" },
+	{ "arg": "zorg", "val": "val5", "role": "server" },
+	{ "arg": "alpha", "val": "val7", "role": "infra" },
+	{ "arg": "gamma", "val": "val11", "role": "client" }
+    ],
+    // many more set 1 permutations go here...
+    //
+    // start set 2 permuations
+    [
+	{ "arg": "foo", "val": "val1", "role": "all" },
+	{ "arg": "bar", "val": "val3", "role": "client" },
+	{ "arg": "beta", "val": "val9", "role": "all" },
+	{ "arg": "delta", "val": "val12", "role": "infra" }
+    ],
+    [
+	{ "arg": "foo", "val": "val2", "role": "all" },
+	{ "arg": "bar", "val": "val3", "role": "client" },
+	{ "arg": "beta", "val": "val9", "role": "all" },
+	{ "arg": "delta", "val": "val12", "role": "infra" }
+    ],
+    [
+	{ "arg": "foo", "val": "val1", "role": "all" },
+	{ "arg": "bar", "val": "val4", "role": "client" },
+	{ "arg": "beta", "val": "val9", "role": "all" },
+	{ "arg": "delta", "val": "val12", "role": "infra" }
+    ],
+    [
+	{ "arg": "foo", "val": "val2", "role": "all" },
+	{ "arg": "bar", "val": "val4", "role": "client" },
+	{ "arg": "beta", "val": "val9", "role": "all" },
+	{ "arg": "delta", "val": "val12", "role": "infra" }
+    ],
+    // many more set 2 permuations go here...
+    //
+    // start set 3 permutations (all listed)
+    [
+	{ "arg": "foo", "val": "val1", "role": "all" },
+	{ "arg": "bar", "val": "val3", "role": "client" },
+	{ "arg": "epsilon", "val": "val14" }
+    ],
+    [
+	{ "arg": "foo", "val": "val2", "role": "all" },
+	{ "arg": "bar", "val": "val3", "role": "client" },
+	{ "arg": "epsilon", "val": "val14" }
+    ],
+    [
+	{ "arg": "foo", "val": "val1", "role": "all" },
+	{ "arg": "bar", "val": "val4", "role": "client" },
+	{ "arg": "epsilon", "val": "val14" }
+    ],
+    [
+	{ "arg": "foo", "val": "val2", "role": "all" },
+	{ "arg": "bar", "val": "val4", "role": "client" },
+	{ "arg": "epsilon", "val": "val14" }
+    ]
+]
