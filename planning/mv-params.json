@@ -1,7 +1,7 @@
 the user submits something that has this format:
 
 {
-    "includes": [
+    "global-options": [
 	{
 	    "name": "common",
 	    "params": [
@@ -41,7 +41,7 @@ the user submits something that has this format:
     ]
 }
 
-first the includes are substituted into the sets resulting in these sets:
+first the global-options are substituted into the sets resulting in these sets:
 
 {
     "sets":[
