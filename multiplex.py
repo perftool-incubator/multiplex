@@ -33,10 +33,12 @@ def dump_json(obj, format = 'readable'):
     """Dump json in readable or parseable format"""
     # Parseable format has no indentation
     indentation = None
+    sep = ':'
     if format == 'readable':
         intentation = 4
+        sep += ' '
 
-    return json.dumps(obj, indent = indentation, separators = (',', ': '),
+    return json.dumps(obj, indent = indentation, separators = (',', sep),
                       sort_keys = True)
 
 

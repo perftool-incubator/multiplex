@@ -13,26 +13,40 @@ When running a benchmark, it is often desirable to run it multiple ways, changin
 Multiplex requires a JSON file with the following format:
 ```
 {
-    "common": [
-    {
-        "name": "global",
-        "params": [
-        { "arg": "bs", "vals": [ "4k", "8k" ] },
-        { "arg": "rw", "vals": [ "read", "write" ] }
-        ]
-    }
-    ],
-    "sets": [
+    "common":
     [
-        { "common": "global" },
-        { "arg": "ioengine", "vals": [ "sync" ] }
+        {
+            "name": "global",
+            "params":
+            [
+                {
+                    "arg": "bs", "vals": [ "4k", "8k" ]
+                },
+                {
+                    "arg": "rw", "vals": [ "read", "write" ]
+                }
+            ]
+        }
+    ],
+    "sets":
+    [
+    [
+        {
+            "common": "global"
+        },
+        {
+            "arg": "ioengine", "vals": [ "sync" ]
+        }
     ]
     ]
 }
 ```
 
-The `common` section is optional, and the `sets` section is required.  At least one set is required.
-A set of "multi-value parameters" is included in each set.  Each set, combined with the multi-value paramters in "common" (if it exists), will be used to expand to a new set of single-value parameters to STDOUT, like the sample generated in `JSON/bench-params-output.json`:
+The `common` and the `sets` section are required.
+A set of "multi-value parameters" is included in each set.  Each set, combined
+with the multi-value paramters in "common", will be used to expand to a new set
+of single-value parameters to STDOUT, like the sample generated in
+`JSON/bench-params-output.json`:
 ```
 [
     [
@@ -94,4 +108,6 @@ A set of "multi-value parameters" is included in each set.  Each set, combined w
 ]
 ```
 
-This JSON can then optionally be modified by the user, and then provided (typically as "bench-params.json") to a benchmark orchestrator like rickshaw-run.
+This JSON can then optionally be modified by the user, and then provided
+(typically as "bench-params.json") to a benchmark orchestrator like
+rickshaw-run.
