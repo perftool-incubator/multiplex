@@ -1,1 +1,0 @@
-In each subdir ./testN, there will be a test.sh.  If the test.sh returns 0, then the test has passed.

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/bin/python3
 
 import json
 import argparse
@@ -14,12 +14,15 @@ class t_global(object):
 
 
 def process_options():
-    parser = argparse.ArgumentParser(description = 'Translate a JSON with multi-value parameters into a JSON with single-value parameters')
+    """Process arguments from command line"""
+    parser = argparse.ArgumentParser(
+        description = 'Translate a JSON with multi-value parameters into a
+                       JSON with single-value parameters')
 
     parser.add_argument('--input',
                         dest = 'input',
                         help = 'JSON file with multi-value parameters',
-                        default = 'bench-params.json',
+                        default = 'mv-params.json',
                         type = str)
 
     t_global.args = parser.parse_args()
@@ -27,15 +30,20 @@ def process_options():
 
 
 def dump_json(obj, format = 'readable'):
+    """Dump json in readable or parseable format"""
+    # Parseable format has no indentation
+    indentation = None
+    sep = ':'
     if format == 'readable':
-        return json.dumps(obj, indent = 4, separators = (',', ': '), sort_keys = True)
-    elif format == 'parsable':
-        return json.dump(obj, separators = (',', ':'), sort_keys = True)
+        intentation = 4
+        sep += ' '
 
-    return(None)
+    return json.dumps(obj, indent = indentation, separators = (',', sep),
+                      sort_keys = True)
 
 
 def handle_common(obj):
+    """Handle common data sets"""
     new_obj = copy.deepcopy(obj['sets'])
 
     for sets_idx in range(0, len(new_obj)):
@@ -61,6 +69,7 @@ def handle_common(obj):
 
 
 def multiplex_set(obj):
+    """Parse vals from one set"""
     new_obj = []
 
     for set_idx in range(0, len(obj)):
@@ -78,6 +87,7 @@ def multiplex_set(obj):
 
 
 def multiplex_sets(obj):
+    """Parse multiple sets"""
     new_obj = copy.deepcopy(obj)
 
     restart = True
@@ -99,6 +109,7 @@ def multiplex_sets(obj):
 
 
 def convert_vals(obj):
+    """Convert vals into val for each single-value set"""
     new_obj = copy.deepcopy(obj)
 
     for param_set in new_obj:
