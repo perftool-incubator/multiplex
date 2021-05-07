@@ -58,7 +58,7 @@ def handle_common(obj):
                             found_match = True
                             del new_obj[sets_idx][mv_param_idx]
                             for insert_offset in range(0, len(common_param_set['params'])):
-                                new_obj[sets_idx].insert(mv_param_idx + insert_offset, common_param_set['params'][insert_offset])
+                                new_obj[sets_idx].insert(mv_param_idx + insert_offset, copy.deepcopy(common_param_set['params'][insert_offset]))
                             break
                     if found_match:
                         break
