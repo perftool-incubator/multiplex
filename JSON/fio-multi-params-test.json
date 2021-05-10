@@ -1,7 +1,7 @@
 {
-    "common": [
+    "global-options": [
 	{
-	    "name": "global",
+	    "name": "common-params",
 	    "params": [
 		{ "arg": "bs", "vals": [ "4k", "8k" ] },
 		{ "arg": "norandommap", "vals":  [ "ON" ] },
@@ -39,19 +39,19 @@
     ],
     "sets": [
 	[
-	    { "common": "global" },
-	    { "common": "crucible-defaults" },
+	    { "include": "common-params" },
+	    { "include": "crucible-defaults" },
 
 	    { "arg": "rw", "vals": [ "read", "write", "randread", "randwrite" ] },
 	    { "arg": "ioengine", "vals": [ "sync" ] },
 	    { "arg": "iodepth", "vals": [ "1" ] },
 	    { "arg": "numjobs", "vals": [ "1", "4", "8", "12", "16", "20" ] },
 
-	    { "common": "jobs" }
+	    { "include": "jobs" }
 	],
 	[
-	    { "common": "global" },
-	    { "common": "crucible-defaults" },
+	    { "include": "common-params" },
+	    { "include": "crucible-defaults" },
 
 	    { "arg": "rw", "vals": [ "randrw" ] },
 	    { "arg": "ioengine", "vals": [ "sync" ] },
@@ -61,7 +61,7 @@
 	    { "arg": "rwmixwrite", "vals": [ "40" ] },
 	    { "arg": "percentage_random", "vals": [ "100,80" ] },
 
-	    { "common": "jobs" }
+	    { "include": "jobs" }
 	]
     ]
 }

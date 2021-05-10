@@ -16,8 +16,8 @@ class t_global(object):
 def process_options():
     """Process arguments from command line"""
     parser = argparse.ArgumentParser(
-        description = 'Translate a JSON with multi-value parameters into a
-                       JSON with single-value parameters')
+        description = 'Translate a JSON with multi-value parameters into a'
+                      'JSON with single-value parameters')
 
     parser.add_argument('--input',
                         dest = 'input',
@@ -35,15 +35,15 @@ def dump_json(obj, format = 'readable'):
     indentation = None
     sep = ':'
     if format == 'readable':
-        intentation = 4
+        indentation = 4
         sep += ' '
 
     return json.dumps(obj, indent = indentation, separators = (',', sep),
                       sort_keys = True)
 
 
-def handle_common(obj):
-    """Handle common data sets"""
+def handle_global_opts(obj):
+    """Handle global-options data sets"""
     new_obj = copy.deepcopy(obj['sets'])
 
     for sets_idx in range(0, len(new_obj)):
@@ -52,13 +52,13 @@ def handle_common(obj):
             restart = False
             found_match = False
             for mv_param_idx in range(0, len(new_obj[sets_idx])):
-                if 'common' in new_obj[sets_idx][mv_param_idx]:
-                    for common_param_set in obj['common']:
-                        if new_obj[sets_idx][mv_param_idx]['common'] == common_param_set['name']:
+                if 'include' in new_obj[sets_idx][mv_param_idx]:
+                    for global_param_set in obj['global-options']:
+                        if new_obj[sets_idx][mv_param_idx]['include'] == global_param_set['name']:
                             found_match = True
                             del new_obj[sets_idx][mv_param_idx]
-                            for insert_offset in range(0, len(common_param_set['params'])):
-                                new_obj[sets_idx].insert(mv_param_idx + insert_offset, copy.deepcopy(common_param_set['params'][insert_offset]))
+                            for insert_offset in range(0, len(global_param_set['params'])):
+                                new_obj[sets_idx].insert(mv_param_idx + insert_offset, copy.deepcopy(global_param_set['params'][insert_offset]))
                             break
                     if found_match:
                         break
@@ -149,7 +149,7 @@ def main():
         print("ERROR: JSON validation failed for %s using schema %s" % (t_global.args.input, json_schema_file))
         return(3)
 
-    combined_json = handle_common(input_json)
+    combined_json = handle_global_opts(input_json)
     multiplexed_json = multiplex_sets(combined_json)
     finalized_json = convert_vals(multiplexed_json)
 

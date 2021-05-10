@@ -13,10 +13,10 @@ When running a benchmark, it is often desirable to run it multiple ways, changin
 Multiplex requires a JSON file with the following format:
 ```
 {
-    "common":
+    "global-options":
     [
         {
-            "name": "global",
+            "name": "common-params",
             "params":
             [
                 {
@@ -32,7 +32,7 @@ Multiplex requires a JSON file with the following format:
     [
     [
         {
-            "common": "global"
+            "include": "common-params"
         },
         {
             "arg": "ioengine", "vals": [ "sync" ]
@@ -42,9 +42,9 @@ Multiplex requires a JSON file with the following format:
 }
 ```
 
-The `common` and the `sets` section are required.
+The `global-options` and the `sets` sections are both required.
 A set of "multi-value parameters" is included in each set.  Each set, combined
-with the multi-value paramters in "common", will be used to expand to a new set
+with the multi-value paramters in "global-options", will be used to expand to a new set
 of single-value parameters to STDOUT, like the sample generated in
 `JSON/bench-params-output.json`:
 ```
