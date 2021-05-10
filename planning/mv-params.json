@@ -20,6 +20,7 @@ the user submits something that has this format:
 	    "name": "scenario2",
 	    "params": [
 		{ "arg": "beta", "vals": [ "val9", "val10" ], "role": "all" }
+		{ "enabled": true }
 	    ]
 	}
     ],
@@ -37,6 +38,7 @@ the user submits something that has this format:
 	[
 	    { "include": "common" },
 	    { "arg": "epsilon", "vals": [ "val14" ] }
+	    { "enabled": false }
 	]
     ]
 }
@@ -127,7 +129,7 @@ then the args are multiplexed within each set to create all the possible permuta
     ],
     // many more set 2 permuations go here...
     //
-    // start set 3 permutations (all listed)
+    // start set 3 permutations (all listed) -- disabled so these would actually not be included
     [
 	{ "arg": "foo", "val": "val1", "role": "all" },
 	{ "arg": "bar", "val": "val3", "role": "client" },
