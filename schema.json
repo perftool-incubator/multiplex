@@ -86,7 +86,7 @@
                 },
                 "role": {
                     "type": "string",
-                    "enum": ["client", "server"]
+                    "enum": ["client", "server", "all"]
                 }
             },
             "required": [

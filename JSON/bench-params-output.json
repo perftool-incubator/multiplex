@@ -7,7 +7,7 @@
         },
         {
             "arg": "rw",
-            "role": "server",
+            "role": "client",
             "val": "read"
         },
         {
@@ -24,7 +24,7 @@
         },
         {
             "arg": "rw",
-            "role": "server",
+            "role": "client",
             "val": "write"
         },
         {
@@ -41,7 +41,7 @@
         },
         {
             "arg": "rw",
-            "role": "server",
+            "role": "client",
             "val": "read"
         },
         {
@@ -58,7 +58,7 @@
         },
         {
             "arg": "rw",
-            "role": "server",
+            "role": "client",
             "val": "write"
         },
         {

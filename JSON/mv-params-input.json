@@ -9,7 +9,7 @@
                         "arg": "bs", "vals": [ "4k", "8k" ], "role": "client"
                     },
                     {
-                        "arg": "rw", "vals": [ "read", "write" ], "role": "server"
+                        "arg": "rw", "vals": [ "read", "write" ]
                     }
                 ]
         }

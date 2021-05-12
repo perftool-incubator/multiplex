@@ -23,7 +23,7 @@ Multiplex requires a JSON file with the following format:
                         "arg": "bs", "vals": [ "4k", "8k" ], "role": "client"
                     },
                     {
-                        "arg": "rw", "vals": [ "read", "write" ], "role": "server"
+                        "arg": "rw", "vals": [ "read", "write" ]
                     }
                 ]
         }
@@ -48,7 +48,7 @@ data can be replicated and included in the `sets` section.
 In this section, you may have an array of multi-value parameters that are common to
 the test run as "common-params". Multi-value params are specified with the `args` and
 `vals` keywords. The `role` key is optional and defaults to 'client' if omitted. Valid
-roles are: "client" and "server".
+roles are: "client", "server" and "all".
 
 Also, you may have a block to define benchmark or tooling specific settings. Example:
 "crucible-defaults".
@@ -60,7 +60,7 @@ A data set of multi-value parameters is defined in each block inside the `sets` 
 The `sets` section is required and must have one or more set(s). Multi-value params are
 specified with the `args` and `vals` keywords, identical to the "common-params" block
 from the `global-options`. Likewise, the `role` key is optional and defaults to 'client'
-if omitted. Valid roles are "client" and "server".
+if omitted. Valid roles are "client", "server" and "all".
 
 
 ## Output single-value JSON
@@ -77,7 +77,7 @@ parameters to STDOUT. A sample is available in `JSON/bench-params-output.json`:
         },
         {
             "arg": "rw",
-            "role": "server",
+            "role": "client",
             "val": "read"
         },
         {
@@ -94,7 +94,7 @@ parameters to STDOUT. A sample is available in `JSON/bench-params-output.json`:
         },
         {
             "arg": "rw",
-            "role": "server",
+            "role": "client",
             "val": "write"
         },
         {
@@ -111,7 +111,7 @@ parameters to STDOUT. A sample is available in `JSON/bench-params-output.json`:
         },
         {
             "arg": "rw",
-            "role": "server",
+            "role": "client",
             "val": "read"
         },
         {
@@ -128,7 +128,7 @@ parameters to STDOUT. A sample is available in `JSON/bench-params-output.json`:
         },
         {
             "arg": "rw",
-            "role": "server",
+            "role": "client",
             "val": "write"
         },
         {
