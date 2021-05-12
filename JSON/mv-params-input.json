@@ -6,10 +6,10 @@
             "params":
                 [
                     {
-                        "arg": "bs", "vals": [ "4k", "8k" ]
+                        "arg": "bs", "vals": [ "4k", "8k" ], "role": "client"
                     },
                     {
-                        "arg": "rw", "vals": [ "read", "write" ]
+                        "arg": "rw", "vals": [ "read", "write" ], "role": "server"
                     }
                 ]
         }

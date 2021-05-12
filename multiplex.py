@@ -73,6 +73,10 @@ def multiplex_set(obj):
     new_obj = []
 
     for set_idx in range(0, len(obj)):
+        # default to client role if not specified
+        if "role" not in obj[set_idx]:
+            obj[set_idx]['role'] = "client"
+
         if len(obj[set_idx]['vals']) > 1:
             for copies in range(0, len(obj[set_idx]['vals'])):
                 new_obj.append(copy.deepcopy(obj))
