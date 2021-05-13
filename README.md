@@ -13,45 +13,39 @@ When running a benchmark, it is often desirable to run it multiple ways, changin
 Multiplex requires a JSON file with the following format:
 ```
 {
-    "global-options":
+    "global-options": [
+    {
+        "name": "common-params",
+        "params": [
+        {
+            "arg": "bs", "vals": [ "4k", "8k" ], "role": "client"
+        },
+        {
+            "arg": "rw", "vals": [ "read", "write" ]
+        }
+        ]
+    }
+    ],
+    "sets": [
     [
         {
-            "name": "common-params",
-            "params":
-                [
-                    {
-                        "arg": "bs", "vals": [ "4k", "8k" ], "role": "client"
-                    },
-                    {
-                        "arg": "rw", "vals": [ "read", "write" ]
-                    }
-                ]
+            "include": "common-params"
+        },
+        {
+            "arg": "ioengine", "vals": [ "sync" ]
         }
-    ],
-    "sets":
-        [
-            [
-                {
-                    "include": "common-params"
-                },
-                {
-                    "arg": "ioengine", "vals": [ "sync" ]
-                }
-            ]
-        ]
+    ]
+    ]
 }
 ```
 
 ### global-options
 The `global-options` section is required. It contains blocks of general configuration
-data can be replicated and included in the `sets` section.
+data that can be replicated and included in the `sets` section.
 In this section, you may have an array of multi-value parameters that are common to
-the test run as "common-params". Multi-value params are specified with the `args` and
-`vals` keywords. The `role` key is optional and defaults to 'client' if omitted. Valid
-roles are: "client", "server" and "all".
-
-Also, you may have a block to define benchmark or tooling specific settings. Example:
-"crucible-defaults".
+the test run such as "common-params". Multi-value params are specified with the `args`
+and `vals` keywords. The `role` key is optional and defaults to 'client' if omitted.
+Valid roles are: "client", "server" and "all".
 
 These blocks must have "name" and "params" key values.
 
