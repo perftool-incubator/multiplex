@@ -1,28 +1,17 @@
 {
-    "global-options":
-    [
+    "global-options": [
         {
             "name": "common-params",
-            "params":
-                [
-                    {
-                        "arg": "bs", "vals": [ "4k", "8k" ]
-                    },
-                    {
-                        "arg": "rw", "vals": [ "read", "write" ]
-                    }
-                ]
+            "params": [
+                { "arg": "bs", "vals": [ "4k", "8k" ], "role": "client" },
+                { "arg": "rw", "vals": [ "read", "write" ] }
+            ]
         }
     ],
-    "sets":
+    "sets": [
         [
-            [
-                {
-                    "include": "common-params"
-                },
-                {
-                    "arg": "ioengine", "vals": [ "sync" ]
-                }
-            ]
+            { "include": "common-params" },
+            { "arg": "ioengine", "vals": [ "sync" ] }
         ]
+    ]
 }

@@ -2,56 +2,68 @@
     [
         {
             "arg": "bs",
+            "role": "client",
             "val": "4k"
         },
         {
             "arg": "rw",
+            "role": "client",
             "val": "read"
         },
         {
             "arg": "ioengine",
+            "role": "client",
             "val": "sync"
         }
     ],
     [
         {
             "arg": "bs",
+            "role": "client",
             "val": "4k"
         },
         {
             "arg": "rw",
+            "role": "client",
             "val": "write"
         },
         {
             "arg": "ioengine",
+            "role": "client",
             "val": "sync"
         }
     ],
     [
         {
             "arg": "bs",
+            "role": "client",
             "val": "8k"
         },
         {
             "arg": "rw",
+            "role": "client",
             "val": "read"
         },
         {
             "arg": "ioengine",
+            "role": "client",
             "val": "sync"
         }
     ],
     [
         {
             "arg": "bs",
+            "role": "client",
             "val": "8k"
         },
         {
             "arg": "rw",
+            "role": "client",
             "val": "write"
         },
         {
             "arg": "ioengine",
+            "role": "client",
             "val": "sync"
         }
     ]
