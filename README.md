@@ -14,27 +14,19 @@ Multiplex requires a JSON file with the following format:
 ```
 {
     "global-options": [
-    {
-        "name": "common-params",
-        "params": [
         {
-            "arg": "bs", "vals": [ "4k", "8k" ], "role": "client"
-        },
-        {
-            "arg": "rw", "vals": [ "read", "write" ]
+            "name": "common-params",
+            "params": [
+                { "arg": "bs", "vals": [ "4k", "8k" ], "role": "client" },
+                { "arg": "rw", "vals": [ "read", "write" ] }
+            ]
         }
-        ]
-    }
     ],
     "sets": [
-    [
-        {
-            "include": "common-params"
-        },
-        {
-            "arg": "ioengine", "vals": [ "sync" ]
-        }
-    ]
+        [
+            { "include": "common-params" },
+            { "arg": "ioengine", "vals": [ "sync" ] }
+        ]
     ]
 }
 ```
