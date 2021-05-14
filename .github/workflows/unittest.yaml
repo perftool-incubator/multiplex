@@ -14,8 +14,8 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # Job to test installation
-  install:
+  # Job to test schema
+  schema:
     # Job will run on github-hosted runner
     runs-on: ubuntu-latest
 
