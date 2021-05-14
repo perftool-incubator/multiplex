@@ -1,4 +1,6 @@
 # multiplex
+[![CI Actions Status](https://github.com/perftool-incubator/multiplex/workflows/unittest/badge.svg)](https://github.com/perftool-incubator/multiplex/actions)
+
 Translates a JSON with multi-value parameters into a JSON with single-value parameters.
 
 ## Introduction
