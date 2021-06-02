@@ -41,14 +41,13 @@ def dump_json(obj, format = 'readable'):
     return json.dumps(obj, indent = indentation, separators = (',', sep),
                       sort_keys = True)
 
+
 def param_enabled(param_obj):
+    """Return True if param is enabled, False otherwise"""
     if "enabled" in param_obj:
         if param_obj['enabled'].lower() == "no":
             return False
-    if "disabled" in param_obj:
-        if param_obj['disabled'].lower() == "yes":
-            return False
-    return True
+    return(True)
 
 
 def handle_global_opts(obj):
@@ -73,6 +72,9 @@ def handle_global_opts(obj):
                             break
                     if found_match:
                         break
+                # remove disabled param from json
+                if not param_enabled(new_obj[sets_idx][mv_param_idx]):
+                    del new_obj[sets_idx][mv_param_idx]
             if found_match:
                 restart = True
 

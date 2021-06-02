@@ -91,10 +91,6 @@
                 "enabled": {
                     "type": "string",
                     "enum": ["yes", "no"]
-                },
-                "disabled": {
-                    "type": "string",
-                    "enum": ["yes", "no"]
                 }
             },
             "required": [
