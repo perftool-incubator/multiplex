@@ -20,7 +20,7 @@ Multiplex requires a JSON file with the following format:
             "name": "common-params",
             "params": [
                 { "arg": "bs", "vals": [ "4k", "8k" ], "role": "client" },
-                { "arg": "rw", "vals": [ "read", "write" ] }
+                { "arg": "rw", "vals": [ "read", "write" ], "disabled": "no" }
             ]
         }
     ],
@@ -50,6 +50,14 @@ specified with the `args` and `vals` keywords, identical to the "common-params" 
 from the `global-options`. Likewise, the `role` key is optional and defaults to 'client'
 if omitted. Valid roles are "client", "server" and "all".
 
+It is also possible to enable/disable params my marking them as "enabled" or "disabled".
+The schema accepts either "yes" and "no" for both keywords, as shown below:
+```
+    { "arg": "rw", "vals": [ "read", "write" ], "enabled": "yes" }
+    { "arg": "rw", "vals": [ "read", "write" ], "enabled": "no" }
+    { "arg": "rw", "vals": [ "read", "write" ], "disabled": "yes" }
+    { "arg": "rw", "vals": [ "read", "write" ], "disabled": "no" }
+```
 
 ## Output single-value JSON
 Each data set from the `sets` section, combined with the multi-value paramters included
