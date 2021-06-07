@@ -25,10 +25,10 @@ def process_options():
                         default = 'mv-params.json',
                         type = str)
 
-    parser.add_argument('--rules',
-                        dest = 'rules',
-                        help = 'JSON file with validation and transformation rules',
-                        default = 'multiplex.json',
+    parser.add_argument('--requirements',
+                        dest = 'req',
+                        nargs = '?',
+                        help = 'JSON file with validation and transformation requirements',
                         type = str)
 
     t_global.args = parser.parse_args()
@@ -179,14 +179,14 @@ def main():
         print("ERROR: JSON validation failed for %s using schema %s" % (t_global.args.input, json_schema_file))
         return(3)
 
-    #TODO: rules file is loaded but still noop
+    #TODO: requirements file is loaded but still noop
     try:
-        rules_fp = open(t_global.args.rules, 'r')
-        rules_json = json.load(rules_fp)
-        rules_fp.close()
+        req_fp = open(t_global.args.req, 'r')
+        req_json = json.load(req_fp)
+        req_fp.close()
     except:
         print("EXCEPTION: %s" % (traceback.format_exc()))
-        print("ERROR: Could not load rules file %s" % (t_global.args.rules))
+        print("ERROR: Could not load requirements file %s" % (t_global.args.req))
         return(4)
 
     combined_json = handle_global_opts(input_json)
