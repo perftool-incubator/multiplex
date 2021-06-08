@@ -63,9 +63,9 @@ present. All the `enabled` markers are stripped from the input json file.
 
 ## Requirements file
 The requirements file defines all the validation and transformation parameters for a
-specific benchmark. The file contains three main blocks: `default`, `mandatory` and
-`validation`. The example below is a simplified version of fio benchmark requirements
-file:
+specific benchmark. The file contains the following blocks: `default`, `mandatory`,
+`preset`, and `validation`. The example below is a simplified version of fio benchmark
+requirements file:
 ```
 {
     "default": {
@@ -76,6 +76,15 @@ file:
         "write_hist_log": ["fio"],
         "log_hist_msec": ["10000"]
     },
+    "preset": [
+        {
+            "name": "sequential-read",
+            "params": [
+                { "arg": "rw", "values": [ "read" ] },
+                { "arg": "bs", "values": [ "4k" ] }
+            ]
+        }
+    ],
     "validation": {
         "size_KMG" : {
             "description" : "bytes in k/K (1024), m/M (1024^2) or g/G (1024^3): 4k 16M 1g",
@@ -90,12 +99,24 @@ file:
 ```
 
 #### default
-Defines all the default param values. Multiplex assumes these default params
-if the param is not present in the mv-paramns.json input file.
+The default set of parameters are supposed to be what is used if no parameters
+are supplied by the user. Multiplex assumes the default value if the param is
+not present in the mv-paramns.json input file.
 
 #### mandatory
+The mandatory parameters are the basic parameters that the test harness need
+to function properly. For instance, the post processing may require certain
+options be enabled so that certain data is available (ie. a latency histogram
+for example). So the mandatory parameters are always appended to the list of
+parameters to use to guarantee basic functionality of the harness.
+
 Defines all the mandatory params. Multiplex checks if all the mandatory params
 are specified in the mv-params.json input file and it fails otherwise.
+
+#### preset
+Preset params allow the benchmark sub-projects to define a list of pre-defined
+parameter sets for the user to easily run a variety of tests.
+
 
 #### validation
 Defines all the acceptable param values by validating the parameters with the
