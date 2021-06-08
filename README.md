@@ -73,8 +73,8 @@ requirements file:
         "bs": ["16k"]
     },
     "mandatory": {
-        "write_hist_log": ["fio"],
-        "log_hist_msec": ["10000"]
+        "write_iops_log": ["fio"],
+        "write_lat_log": ["fio"]
     },
     "preset": [
         {
@@ -88,13 +88,17 @@ requirements file:
     "validation": {
         "size_KMG" : {
             "description" : "bytes in k/K (1024), m/M (1024^2) or g/G (1024^3): 4k 16M 1g",
-            "arguments" : [ "param1", "filesize", "io_size", "mem" ],
+            "arguments" : [ "rw", "bs" ],
             "value" : "[0-9]+[kbmgKBMG]",
             "transform" : [ "s/([0-9]+)[gG]/($1*1024).\"M\"/e",
                             "s/([0-9]+)[mM]/($1*1024).\"K\"/e"
             ]
+        },
+        "log_types" : {
+          "description" : "all possible log types",
+          "arguments" : [ "write_iops_log", "write_lat_log" ],
+          "value" : "^fio$"
         }
-    }
 }
 ```
 
