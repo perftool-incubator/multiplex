@@ -59,7 +59,7 @@ below:
 ```
 Marking params as enabled ("enabled": "yes") or disabled ("enabled": "no") is optional.
 Multiplex assumes that the param is enabled by default when the `enabled` keyword is not
-present.
+present. All the `enabled` markers are stripped from the input json file.
 
 ## Output single-value JSON
 Each data set from the `sets` section, combined with the multi-value paramters included

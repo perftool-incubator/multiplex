@@ -24,7 +24,7 @@ class TestJSON:
         ]
     }
     """
-    json_enabled_global_expected="""[[{"arg": "ioengine", "enabled": "yes", "vals": ["sync"]}]]"""
+    json_enabled_global_expected="""[[{"arg": "ioengine", "vals": ["sync"]}]]"""
 
     json_disabled_params_sets="""
     {
@@ -47,16 +47,16 @@ class TestJSON:
 
     # This is the output of handle_global_opts function and
     # the input for multiplex_sets function
-    json_enabled_sets_expected="""[[{"arg": "rw", "enabled": "yes", "vals": ["read", "write"]}]]"""
+    json_enabled_sets_expected="""[[{"arg": "rw", "vals": ["read", "write"]}]]"""
 
     json_single_value_sets_expected="""
-    [[{"arg": "rw", "enabled": "yes", "role": "client", "vals": ["read"]}],
-    [{"arg": "rw", "enabled": "yes", "role": "client", "vals": ["write"]}]]
+    [[{"arg": "rw", "role": "client", "vals": ["read"]}],
+    [{"arg": "rw", "role": "client", "vals": ["write"]}]]
     """
 
     json_final_expected="""
-    [[{"arg": "rw", "enabled": "yes", "role": "client", "val": "read"}],
-    [{"arg": "rw", "enabled": "yes", "role": "client", "val": "write"}]]
+    [[{"arg": "rw", "role": "client", "val": "read"}],
+    [{"arg": "rw", "role": "client", "val": "write"}]]
     """
 
 
