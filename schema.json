@@ -87,6 +87,10 @@
                 "role": {
                     "type": "string",
                     "enum": ["client", "server", "all"]
+                },
+                "enabled": {
+                    "type": "string",
+                    "enum": ["yes", "no"]
                 }
             },
             "required": [

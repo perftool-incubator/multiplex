@@ -42,6 +42,16 @@ def dump_json(obj, format = 'readable'):
                       sort_keys = True)
 
 
+def param_enabled(param_obj):
+    """Return True if param is enabled, False otherwise"""
+    enabled=True
+    if "enabled" in param_obj:
+        if param_obj['enabled'].lower() == "no":
+            enabled=False
+        del param_obj["enabled"]
+    return(enabled)
+
+
 def handle_global_opts(obj):
     """Handle global-options data sets"""
     new_obj = copy.deepcopy(obj['sets'])
@@ -58,10 +68,15 @@ def handle_global_opts(obj):
                             found_match = True
                             del new_obj[sets_idx][mv_param_idx]
                             for insert_offset in range(0, len(global_param_set['params'])):
-                                new_obj[sets_idx].insert(mv_param_idx + insert_offset, copy.deepcopy(global_param_set['params'][insert_offset]))
+                                # ignores/skips param if not enabled
+                                if param_enabled(global_param_set['params'][insert_offset]):
+                                    new_obj[sets_idx].insert(mv_param_idx + insert_offset, copy.deepcopy(global_param_set['params'][insert_offset]))
                             break
                     if found_match:
                         break
+                # remove disabled param from json
+                if not param_enabled(new_obj[sets_idx][mv_param_idx]):
+                    del new_obj[sets_idx][mv_param_idx]
             if found_match:
                 restart = True
 
@@ -73,6 +88,11 @@ def multiplex_set(obj):
     new_obj = []
 
     for set_idx in range(0, len(obj)):
+
+        # ignores/skips param if not enabled
+        if not param_enabled(obj[set_idx]):
+            continue
+
         # default to client role if not specified
         if "role" not in obj[set_idx]:
             obj[set_idx]['role'] = "client"
