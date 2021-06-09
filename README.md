@@ -63,20 +63,20 @@ present. All the `enabled` markers are stripped from the input json file.
 
 ## Requirements file
 The requirements file defines all the validation and transformation parameters for a
-specific benchmark. The file contains the following blocks: `default`, `mandatory`,
-`preset`, and `validation`. The example below is a simplified version of fio benchmark
-requirements file:
+specific benchmark. The file contains the following blocks: `defaults` and `essentials`,
+as part of the `presets` array; and `validations`. The example below is a simplified
+version of fio benchmark requirements file:
 ```
 {
-    "default": {
+    "defaults": {
         "rw": ["read", "randread"],
         "bs": ["16k"]
     },
-    "mandatory": {
+    "essentials": {
         "write_iops_log": ["fio"],
         "write_lat_log": ["fio"]
     },
-    "preset": [
+    "presets": [
         {
             "name": "sequential-read",
             "params": [
@@ -85,44 +85,57 @@ requirements file:
             ]
         }
     ],
-    "validation": {
+    "validations": {
         "size_KMG" : {
             "description" : "bytes in k/K (1024), m/M (1024^2) or g/G (1024^3): 4k 16M 1g",
-            "arguments" : [ "rw", "bs" ],
+            "arguments" : [ "bs" ],
             "value" : "[0-9]+[kbmgKBMG]",
             "transform" : [ "s/([0-9]+)[gG]/($1*1024).\"M\"/e",
-                            "s/([0-9]+)[mM]/($1*1024).\"K\"/e"
-            ]
+                            "s/([0-9]+)[mM]/($1*1024).\"K\"/e" ]
         },
         "log_types" : {
           "description" : "all possible log types",
-          "arguments" : [ "write_iops_log", "write_lat_log" ],
+          "arguments" : [ "write_bw_log", "write_hist_log", "write_iolog", "write_iops_log", "write_lat_log" ],
           "value" : "^fio$"
+        },
+        "rw_types" : {
+          "description" : "all possible testtypes",
+          "arguments" : [ "rw" ],
+          "value" : "^(|rand)(read|write|trim)$|^readwrite$|^randrw$|^trimwrite$"
         }
+    }
 }
 ```
 
-#### default
-The default set of parameters are supposed to be what is used if no parameters
-are supplied by the user. Multiplex assumes the default value if the param is
-not present in the mv-paramns.json input file.
+The order of precedence for overriding params is the following:
+    1. `essentials`: always use (override params defined elsewhere).
+    2. param sets defined in the input file: apply params overriding defaults and
+       `presets`.
+    3. `presets`: override all default params with the params in the `presets`
+       array.
+    4. `defaults`: only use if not defined anywhere else.
 
-#### mandatory
-The mandatory parameters are the basic parameters that the test harness need
-to function properly. For instance, the post processing may require certain
-options be enabled so that certain data is available (ie. a latency histogram
-for example). So the mandatory parameters are always appended to the list of
+### presets
+
+The presets array is composed by 3 types of elements: `defaults`,
+`essentials` and all sets of params that should override the params from
+the `defaults` section. Params defined in the `presets` section allow the
+benchmark to create a list of pre-defined parameter sets for the user to
+easily run a variety of tests.
+
+#### defaults
+The `defaults` parameters are used if no parameters are supplied in the input
+file by the user. Multiplex assumes the default value if the param is not
+present in the multi-value json file neither in the `presets` section of the
+requirements file.
+
+#### essentials
+The `essentials` parameters are the minimum parameters that the test harness
+need to function properly. Theses parameters are always appended to the list of
 parameters to use to guarantee basic functionality of the harness.
 
-Defines all the mandatory params. Multiplex checks if all the mandatory params
-are specified in the mv-params.json input file and it fails otherwise.
 
-#### preset
-Preset params allow the benchmark sub-projects to define a list of pre-defined
-parameter sets for the user to easily run a variety of tests.
-
-
-#### validation
+### validation
 Defines all the acceptable param values by validating the parameters with the
 `value` regex. The values are transformed by applying the `transform` regex,
 if present. The `transform` key is optional.
