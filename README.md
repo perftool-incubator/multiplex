@@ -68,40 +68,37 @@ as part of the `presets` array; and `validations`. The example below is a simpli
 version of fio benchmark requirements file:
 ```
 {
-    "defaults": {
-        "rw": ["read", "randread"],
-        "bs": ["16k"]
+    "presets": {
+        "essentials": [
+            { "arg": "write_iops_log", "vals": ["fio"] },
+            { "arg": "write_lat_log", "vals": ["fio"] }
+        ],
+        "defaults": [
+            { "arg": "rw", "vals": ["read", "randread"] },
+            { "arg": "bs", "vals": ["16k"] }
+        ],
+        "sequential-read": [
+            { "arg": "rw", "vals": [ "read" ] },
+            { "arg": "bs", "vals": [ "4k" ] }
+        ]
     },
-    "essentials": {
-        "write_iops_log": ["fio"],
-        "write_lat_log": ["fio"]
-    },
-    "presets": [
-        {
-            "name": "sequential-read",
-            "params": [
-                { "arg": "rw", "values": [ "read" ] },
-                { "arg": "bs", "values": [ "4k" ] }
-            ]
-        }
-    ],
     "validations": {
         "size_KMG" : {
             "description" : "bytes in k/K (1024), m/M (1024^2) or g/G (1024^3): 4k 16M 1g",
-            "arguments" : [ "bs" ],
-            "value" : "[0-9]+[kbmgKBMG]",
+            "args" : [ "bs" ],
+            "vals" : "[0-9]+[kbmgKBMG]",
             "transform" : [ "s/([0-9]+)[gG]/($1*1024).\"M\"/e",
                             "s/([0-9]+)[mM]/($1*1024).\"K\"/e" ]
         },
         "log_types" : {
-          "description" : "all possible log types",
-          "arguments" : [ "write_bw_log", "write_hist_log", "write_iolog", "write_iops_log", "write_lat_log" ],
-          "value" : "^fio$"
+            "description" : "all possible log types",
+            "args" : [ "write_bw_log", "write_hist_log", "write_iolog", "write_iops_log", "write_lat_log" ],
+            "vals" : "^fio$"
         },
         "rw_types" : {
-          "description" : "all possible testtypes",
-          "arguments" : [ "rw" ],
-          "value" : "^(|rand)(read|write|trim)$|^readwrite$|^randrw$|^trimwrite$"
+            "description" : "all possible testtypes",
+            "args" : [ "rw" ],
+            "vals" : "^(|rand)(read|write|trim)$|^readwrite$|^randrw$|^trimwrite$"
         }
     }
 }
