@@ -27,7 +27,6 @@ def process_options():
 
     parser.add_argument('--requirements',
                         dest = 'req',
-                        nargs = '?',
                         help = 'JSON file with validation and transformation requirements',
                         type = str)
 
@@ -179,15 +178,16 @@ def main():
         print("ERROR: JSON validation failed for %s using schema %s" % (t_global.args.input, json_schema_file))
         return(3)
 
-    #TODO: requirements file is loaded but still noop
-    try:
-        req_fp = open(t_global.args.req, 'r')
-        req_json = json.load(req_fp)
-        req_fp.close()
-    except:
-        print("EXCEPTION: %s" % (traceback.format_exc()))
-        print("ERROR: Could not load requirements file %s" % (t_global.args.req))
-        return(4)
+    if t_global.args.req is not None:
+        #TODO: requirements file is loaded but still noop
+        try:
+            req_fp = open(t_global.args.req, 'r')
+            req_json = json.load(req_fp)
+            req_fp.close()
+        except:
+            print("EXCEPTION: %s" % (traceback.format_exc()))
+            print("ERROR: Could not load requirements file %s" % (t_global.args.req))
+            return(4)
 
     combined_json = handle_global_opts(input_json)
     multiplexed_json = multiplex_sets(combined_json)
