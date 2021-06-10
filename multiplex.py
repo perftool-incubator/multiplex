@@ -149,6 +149,20 @@ def convert_vals(obj):
     return(new_obj)
 
 
+def load_requirements(req_arg):
+    """Load requirements json file from --requirements arg"""
+    #TODO: requirements file is loaded but still noop
+    try:
+        req_fp = open(req_arg, 'r')
+        req_json = json.load(req_fp)
+        req_fp.close()
+    except:
+        print("EXCEPTION: %s" % (traceback.format_exc()))
+        print("ERROR: Could not load requirements file %s" % (req_arg))
+        return(None)
+    return(req_json)
+
+
 def main():
     input_json = None
 
@@ -179,14 +193,7 @@ def main():
         return(3)
 
     if t_global.args.req is not None:
-        #TODO: requirements file is loaded but still noop
-        try:
-            req_fp = open(t_global.args.req, 'r')
-            req_json = json.load(req_fp)
-            req_fp.close()
-        except:
-            print("EXCEPTION: %s" % (traceback.format_exc()))
-            print("ERROR: Could not load requirements file %s" % (t_global.args.req))
+        if load_requirements(t_global.args.req) is None:
             return(4)
 
     combined_json = handle_global_opts(input_json)

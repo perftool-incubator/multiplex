@@ -14,8 +14,8 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # Job to test schema
-  schema:
+  # Jobs to test schema, input json file, and requirements
+  multiplex-unittests:
     # Job will run on github-hosted runner
     runs-on: ubuntu-latest
 
