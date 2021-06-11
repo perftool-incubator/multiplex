@@ -8,7 +8,7 @@ When running a benchmark, it is often desirable to run it multiple ways, changin
 
 ## Usage
 ```
-./multiplex.py --input JSON/mv-params-input.json > /path/to/bench-params.json
+./multiplex.py [--requirements JSON/requirements.json] --input JSON/mv-params-input.json > /path/to/bench-params.json
 ```
 
 ## Input multi-value JSON
@@ -60,6 +60,83 @@ below:
 Marking params as enabled ("enabled": "yes") or disabled ("enabled": "no") is optional.
 Multiplex assumes that the param is enabled by default when the `enabled` keyword is not
 present. All the `enabled` markers are stripped from the input json file.
+
+## Requirements file
+The requirements file defines all the validation and transformation parameters for a
+specific benchmark. The file contains the following blocks: `defaults` and `essentials`,
+as part of the `presets` array; and `validations`. The example below is a simplified
+version of fio benchmark requirements file:
+```
+{
+    "presets": {
+        "essentials": [
+            { "arg": "write_iops_log", "vals": ["fio"] },
+            { "arg": "write_lat_log", "vals": ["fio"] }
+        ],
+        "defaults": [
+            { "arg": "rw", "vals": ["read", "randread"] },
+            { "arg": "bs", "vals": ["16k"] }
+        ],
+        "sequential-read": [
+            { "arg": "rw", "vals": [ "read" ] },
+            { "arg": "bs", "vals": [ "4k" ] }
+        ]
+    },
+    "validations": {
+        "size_KMG" : {
+            "description" : "bytes in k/K (1024), m/M (1024^2) or g/G (1024^3): 4k 16M 1g",
+            "args" : [ "bs" ],
+            "vals" : "[0-9]+[kbmgKBMG]",
+            "transform" : [ "s/([0-9]+)[gG]/($1*1024).\"M\"/e",
+                            "s/([0-9]+)[mM]/($1*1024).\"K\"/e" ]
+        },
+        "log_types" : {
+            "description" : "all possible log types",
+            "args" : [ "write_bw_log", "write_hist_log", "write_iolog", "write_iops_log", "write_lat_log" ],
+            "vals" : "^fio$"
+        },
+        "rw_types" : {
+            "description" : "all possible testtypes",
+            "args" : [ "rw" ],
+            "vals" : "^(|rand)(read|write|trim)$|^readwrite$|^randrw$|^trimwrite$"
+        }
+    }
+}
+```
+
+The order of precedence for overriding params is the following:
+    1. `essentials`: always use (override params defined elsewhere).
+    2. param sets defined in the input file: apply params overriding defaults and
+       `presets`.
+    3. `presets`: override all default params with the params in the `presets`
+       array.
+    4. `defaults`: only use if not defined anywhere else.
+
+### presets
+
+The presets array is composed by 3 types of elements: `defaults`,
+`essentials` and all sets of params that should override the params from
+the `defaults` section. Params defined in the `presets` section allow the
+benchmark to create a list of pre-defined parameter sets for the user to
+easily run a variety of tests.
+
+#### defaults
+The `defaults` parameters are used if no parameters are supplied in the input
+file by the user. Multiplex assumes the default value if the param is not
+present in the multi-value json file neither in the `presets` section of the
+requirements file.
+
+#### essentials
+The `essentials` parameters are the minimum parameters that the test harness
+need to function properly. Theses parameters are always appended to the list of
+parameters to use to guarantee basic functionality of the harness.
+
+
+### validation
+Defines all the acceptable param values by validating the parameters with the
+`value` regex. The values are transformed by applying the `transform` regex,
+if present. The `transform` key is optional.
+
 
 ## Output single-value JSON
 Each data set from the `sets` section, combined with the multi-value paramters included
