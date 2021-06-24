@@ -17,10 +17,12 @@ class TestJSON:
             }
         ],
         "sets": [
-            [
-                { "include": "common-params" },
-                { "arg": "ioengine", "vals": [ "sync" ], "enabled": "yes" }
-            ]
+            {
+                "include": "common-params",
+                "params": [
+                    { "arg": "ioengine", "vals": [ "sync" ], "enabled": "yes" }
+                ]
+            }
         ]
     }
     """
@@ -37,15 +39,17 @@ class TestJSON:
             }
         ],
         "sets": [
-            [
-                { "include": "common-params" },
-                { "arg": "ioengine", "vals": [ "sync" ], "enabled": "no" }
-            ]
+            {
+                "include": "common-params",
+                "params": [
+                    { "arg": "ioengine", "vals": [ "sync" ], "enabled": "no" }
+                ]
+            }
         ]
     }
     """
 
-    # This is the output of handle_global_opts function and
+    # This is the output of load_param_sets function and
     # the input for multiplex_sets function
     json_enabled_sets_expected="""[[{"arg": "rw", "vals": ["read", "write"]}]]"""
 
@@ -68,7 +72,7 @@ class TestJSON:
     """Test if handle_global_opts removes disabled params from global params"""
     @pytest.mark.parametrize("load_json", [ json_disabled_params_global ], indirect=True)
     def test_disabled_global_params(self, load_json):
-        combined_json = multiplex.handle_global_opts(load_json)
+        combined_json = multiplex.load_param_sets(load_json)
         short_json = json.dumps(combined_json, sort_keys=True, indent=None).replace("\n", "")
         expected_json = self.json_enabled_global_expected.replace("\n", "")
 
@@ -78,7 +82,7 @@ class TestJSON:
     """Test if hanlde_global_opts removes disabled params from global params"""
     @pytest.mark.parametrize("load_json", [ json_disabled_params_sets ], indirect=True)
     def test_disabled_sets_params(self, load_json):
-        combined_json = multiplex.handle_global_opts(load_json)
+        combined_json = multiplex.load_param_sets(load_json)
         short_json = json.dumps(combined_json, sort_keys=True, indent=None).replace("\n", "")
         expected_json = self.json_enabled_sets_expected.replace("\n", "")
 

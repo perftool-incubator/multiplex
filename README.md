@@ -25,10 +25,12 @@ Multiplex requires a JSON file with the following format:
         }
     ],
     "sets": [
-        [
-            { "include": "common-params" },
-            { "arg": "ioengine", "vals": [ "sync" ] }
-        ]
+        {
+            "include": "common-params",
+            "params": [
+                { "arg": "ioengine", "vals": [ "sync" ] }
+            ]
+        }
     ]
 }
 ```

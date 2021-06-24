@@ -38,10 +38,12 @@ class TestSchema:
                 }
             ],
             "sets": [
-                [
-                    { "include": "common-params" },
-                    { "arg": "ioengine", "vals": [ "sync" ] }
-                ]
+                {
+                    "include": "common-params",
+                    "params": [
+                        { "arg": "ioengine", "vals": [ "sync" ] }
+                    ]
+                }
             ]
         }
         """

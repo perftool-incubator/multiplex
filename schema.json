@@ -30,37 +30,35 @@
                 ],
                 "additionalProperties": false
             }
-    },
-    "sets": {
-        "type": "array",
-        "minItems": 1,
-        "uniqueItems": true,
-        "items": {
+        },
+        "sets": {
             "type": "array",
             "minItems": 1,
-            "uniqeueItems": true,
+            "uniqueItems": true,
             "items": {
-                "oneOf": [
-                    {
-                        "type": "object",
-                        "properties": {
-                            "include": {
-                                "type": "string",
-                                "minLength": 1
-                            }
-                        },
-                        "required": [
-                            "include"
-                        ],
-                        "additionalProperties": false
+                "type": "object",
+                "minItems": 1,
+                "uniqeueItems": true,
+                "properties": {
+                    "include": {
+                        "type": "string",
+                        "minLength": 1
                     },
-                    {
-                    "$ref": "#/definitions/mv_param"
+                    "params": {
+                        "type": "array",
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "items": {
+                            "$ref": "#/definitions/mv_param"
+                        }
                     }
-                ]
+                },
+                "required": [
+                    "params"
+                ],
+                "additionalProperties": false
             }
         }
-    }
     },
     "required": [
         "global-options",
