@@ -8,7 +8,7 @@ When running a benchmark, it is often desirable to run it multiple ways, changin
 
 ## Usage
 ```
-./multiplex.py [--requirements JSON/requirements.json] --input JSON/mv-params-input.json > /path/to/bench-params.json
+./multiplex.py [--requirements JSON/requirements.json] --input JSON/mv-params-input.json [--output /path/to/bench-params.json]
 ```
 
 ## Input multi-value JSON

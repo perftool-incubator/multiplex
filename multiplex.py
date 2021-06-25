@@ -33,6 +33,11 @@ def process_options():
                         help = 'JSON file with validation and transformation requirements',
                         type = str)
 
+    parser.add_argument('--output',
+                        dest = 'output',
+                        help = 'JSON output file with single-value parameters',
+                        type = str)
+
     parser.add_argument('--debug',
                         action = 'store_true',
                         help = 'Print debug messages to stderr')
@@ -168,6 +173,7 @@ def load_requirements(req_arg):
     return(req_json)
 
 def load_input_file(mv_file):
+    """Load input file with multi-value params and return a json object"""
     try:
         input_fp = open(mv_file, 'r')
         input_json = json.load(input_fp)
@@ -178,8 +184,8 @@ def load_input_file(mv_file):
     return(input_json)
 
 def validate_schema(input_json):
-    json_schema_file = "%s/%s" % (os.path.dirname(os.path.abspath(__file__)),
-                                  "schema.json")
+    """Validate json with schema file"""
+    json_schema_file = "%s/%s" % (os.path.dirname(os.path.abspath(__file__)), "schema.json")
     try:
         schema_fp = open(json_schema_file, 'r')
         schema_contents = json.load(schema_fp)
@@ -198,11 +204,28 @@ def validate_schema(input_json):
         return(False)
     return(True)
 
+def dump_output(final_json):
+    """Dump output multiplexed json to stdout or file"""
+
+    if args.output is None:
+        # dump to stdout
+        print(dump_json(final_json))
+    else:
+        # dump to --output file
+        try:
+            output_file=open(args.output,mode="w",encoding="utf-8")
+            output_file.write(dump_json(final_json))
+            output_file.close()
+        except IOError:
+            log.exception("Failed to write to file %s" % (args.output))
+            exit(EC_OUTPUT_WRITE_FAIL)
+
 
 def main():
+    """Main function of multiplex"""
 
-    global log
     global args
+    global log
 
     logformat = '%(asctime)s %(levelname)s %(name)s:  %(message)s'
     if args.debug:
@@ -226,7 +249,7 @@ def main():
     multiplexed_json = multiplex_sets(combined_json)
     finalized_json = convert_vals(multiplexed_json)
 
-    print(dump_json(finalized_json))
+    dump_output(finalized_json)
 
     return(EC_SUCCESS)
 
