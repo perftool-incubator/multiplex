@@ -16,10 +16,6 @@ EC_JSON_FAIL=2
 EC_REQUIREMENTS_FAIL=3
 
 
-class t_global(object):
-    args = None
-
-
 def process_options():
     """Process arguments from command line"""
     parser = argparse.ArgumentParser(
@@ -41,9 +37,8 @@ def process_options():
                         action = 'store_true',
                         help = 'Print debug messages to stderr')
 
-
-    t_global.args = parser.parse_args()
-    return(0)
+    args = parser.parse_args()
+    return(args)
 
 
 def dump_json(obj, format = 'readable'):
@@ -207,23 +202,24 @@ def validate_schema(input_json):
 def main():
 
     global log
+    global args
 
     logformat = '%(asctime)s %(levelname)s %(name)s:  %(message)s'
-    if t_global.args.debug:
+    if args.debug:
         logging.basicConfig(level=logging.DEBUG, format=logformat)
     else:
         logging.basicConfig(level=logging.INFO, format=logformat)
     log = logging.getLogger(__name__)
 
-    input_json = load_input_file(t_global.args.input)
+    input_json = load_input_file(args.input)
 
     if input_json is None:
         return(EC_JSON_FAIL)
     if not validate_schema(input_json):
         return(EC_SCHEMA_FAIL)
 
-    if t_global.args.req is not None:
-        if load_requirements(t_global.args.req) is None:
+    if args.req is not None:
+        if load_requirements(args.req) is None:
             return(EC_REQUIREMENTS_FAIL)
 
     combined_json = load_param_sets(input_json)
@@ -236,5 +232,5 @@ def main():
 
 
 if __name__ == "__main__":
-    process_options()
+    args = process_options()
     exit(main())
