@@ -38,26 +38,30 @@
         }
     ],
     "sets": [
-        [
-            { "include": "common-params" },
-            { "include": "crucible-defaults" },
-            { "arg": "rw", "vals": [ "read", "write", "randread", "randwrite" ] },
-            { "arg": "ioengine", "vals": [ "sync" ] },
-            { "arg": "iodepth", "vals": [ "1" ] },
-            { "arg": "numjobs", "vals": [ "1", "4", "8", "12", "16", "20" ] },
-            { "include": "jobs" }
-        ],
-        [
-            { "include": "common-params" },
-            { "include": "crucible-defaults" },
-            { "arg": "rw", "vals": [ "randrw" ] },
-            { "arg": "ioengine", "vals": [ "sync" ] },
-            { "arg": "iodepth", "vals": [ "1" ] },
-            { "arg": "numjobs", "vals": [ "1", "4", "8", "12", "16", "20" ] },
-            { "arg": "rwmixread", "vals": [ "60" ] },
-            { "arg": "rwmixwrite", "vals": [ "40" ] },
-            { "arg": "percentage_random", "vals": [ "100,80" ] },
-            { "include": "jobs" }
-        ]
+        {
+            "include": "common-params",
+            "include": "crucible-defaults",
+            "params": [
+                { "arg": "rw", "vals": [ "read", "write", "randread", "randwrite" ] },
+                { "arg": "ioengine", "vals": [ "sync" ] },
+                { "arg": "iodepth", "vals": [ "1" ] },
+                { "arg": "numjobs", "vals": [ "1", "4", "8", "12", "16", "20" ] },
+                { "include": "jobs" }
+            ]
+        },
+        {
+            "include": "common-params",
+            "include": "crucible-defaults",
+            "params": [
+                { "arg": "rw", "vals": [ "randrw" ] },
+                { "arg": "ioengine", "vals": [ "sync" ] },
+                { "arg": "iodepth", "vals": [ "1" ] },
+                { "arg": "numjobs", "vals": [ "1", "4", "8", "12", "16", "20" ] },
+                { "arg": "rwmixread", "vals": [ "60" ] },
+                { "arg": "rwmixwrite", "vals": [ "40" ] },
+                { "arg": "percentage_random", "vals": [ "100,80" ] },
+                { "include": "jobs" }
+            ]
+        }
     ]
 }

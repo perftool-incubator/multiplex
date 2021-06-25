@@ -57,35 +57,34 @@ def param_enabled(param_obj):
     return(enabled)
 
 
-def handle_global_opts(obj):
-    """Handle global-options data sets"""
-    new_obj = copy.deepcopy(obj['sets'])
+def load_param_sets(sets_block):
+    """Load params from sets block"""
+    # mv_array (multi-value) is an array of param set arrays
+    mv_array = []
 
-    for sets_idx in range(0, len(new_obj)):
-        restart = True
-        while restart:
-            restart = False
-            found_match = False
-            for mv_param_idx in range(0, len(new_obj[sets_idx])):
-                if 'include' in new_obj[sets_idx][mv_param_idx]:
-                    for global_param_set in obj['global-options']:
-                        if new_obj[sets_idx][mv_param_idx]['include'] == global_param_set['name']:
-                            found_match = True
-                            del new_obj[sets_idx][mv_param_idx]
-                            for insert_offset in range(0, len(global_param_set['params'])):
-                                # ignores/skips param if not enabled
-                                if param_enabled(global_param_set['params'][insert_offset]):
-                                    new_obj[sets_idx].insert(mv_param_idx + insert_offset, copy.deepcopy(global_param_set['params'][insert_offset]))
-                            break
-                    if found_match:
-                        break
-                # remove disabled param from json
-                if not param_enabled(new_obj[sets_idx][mv_param_idx]):
-                    del new_obj[sets_idx][mv_param_idx]
-            if found_match:
-                restart = True
+    for set in sets_block['sets']:
+        param_set = []
 
-    return(new_obj)
+        # handle global params included in each set
+        if 'include' in set:
+            # Go find set of params in global options block
+            for global_opt in sets_block['global-options']:
+                # Include params if set name matches
+                if set['include'] == global_opt['name']:
+                    for global_param in global_opt['params']:
+                        if param_enabled(global_param):
+                            param_set.append(global_param)
+
+        # handle params in each set
+        if 'params' in set:
+            for param in set['params']:
+                if param_enabled(param):
+                    param_set.append(param)
+
+        # mv_array is the outter array containing the inner sets
+        mv_array.append(param_set)
+
+    return(mv_array)
 
 
 def multiplex_set(obj):
@@ -196,7 +195,7 @@ def main():
         if load_requirements(t_global.args.req) is None:
             return(4)
 
-    combined_json = handle_global_opts(input_json)
+    combined_json = load_param_sets(input_json)
     multiplexed_json = multiplex_sets(combined_json)
     finalized_json = convert_vals(multiplexed_json)
 
