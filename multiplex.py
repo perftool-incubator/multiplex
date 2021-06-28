@@ -5,12 +5,15 @@ import argparse
 import copy
 import traceback
 import os
+import logging
 
 from jsonschema import validate
+from jsonschema import exceptions
 
-
-class t_global(object):
-    args = None
+EC_SUCCESS=0
+EC_SCHEMA_FAIL=1
+EC_JSON_FAIL=2
+EC_REQUIREMENTS_FAIL=3
 
 
 def process_options():
@@ -30,8 +33,17 @@ def process_options():
                         help = 'JSON file with validation and transformation requirements',
                         type = str)
 
-    t_global.args = parser.parse_args()
-    return(0)
+    parser.add_argument('--output',
+                        dest = 'output',
+                        help = 'JSON output file with single-value parameters',
+                        type = str)
+
+    parser.add_argument('--debug',
+                        action = 'store_true',
+                        help = 'Print debug messages to stderr')
+
+    args = parser.parse_args()
+    return(args)
 
 
 def dump_json(obj, format = 'readable'):
@@ -156,55 +168,92 @@ def load_requirements(req_arg):
         req_json = json.load(req_fp)
         req_fp.close()
     except:
-        print("EXCEPTION: %s" % (traceback.format_exc()))
-        print("ERROR: Could not load requirements file %s" % (req_arg))
+        log.exception("Could not load requirements file %s" % (req_arg))
         return(None)
     return(req_json)
 
-
-def main():
-    input_json = None
-
+def load_input_file(mv_file):
+    """Load input file with multi-value params and return a json object"""
     try:
-        input_fp = open(t_global.args.input, 'r')
+        input_fp = open(mv_file, 'r')
         input_json = json.load(input_fp)
         input_fp.close()
     except:
-        print("EXCEPTION: %s" % (traceback.format_exc()))
-        print("ERROR: Could not load input file %s" % (t_global.args.input))
-        return(1)
+        log.exception("Could not load input file %s" % (mv_file))
+        return(None)
+    return(input_json)
 
+def validate_schema(input_json):
+    """Validate json with schema file"""
     json_schema_file = "%s/%s" % (os.path.dirname(os.path.abspath(__file__)), "schema.json")
     try:
         schema_fp = open(json_schema_file, 'r')
         schema_contents = json.load(schema_fp)
         schema_fp.close()
-    except:
-        print("EXCEPTION: %s" % (traceback.format_exc()))
-        print("ERROR: Could not load a valid JSON schema from %s" % (json_schema_file))
-        return(2)
-
-    try:
         validate(instance = input_json, schema = schema_contents)
-    except:
-        print("EXCEPTION: %s" % (traceback.format_exc()))
-        print("ERROR: JSON validation failed for %s using schema %s" % (t_global.args.input, json_schema_file))
-        return(3)
+    except IOError:
+        log.exception("Could not open schema file %s" % (json_schema_file))
+        return(False)
+    except ValueError:
+        log.exception("Could not load a valid JSON schema from %s"
+                      % (json_schema_file))
+        return(False)
+    except ValueError:
+        log.exception("JSON validation failed for %s using schema %s"
+                      % (input_json, json_schema_file))
+        return(False)
+    return(True)
 
-    if t_global.args.req is not None:
-        if load_requirements(t_global.args.req) is None:
-            return(4)
+def dump_output(final_json):
+    """Dump output multiplexed json to stdout or file"""
+
+    if args.output is None:
+        # dump to stdout
+        print(dump_json(final_json))
+    else:
+        # dump to --output file
+        try:
+            output_file=open(args.output,mode="w",encoding="utf-8")
+            output_file.write(dump_json(final_json))
+            output_file.close()
+        except IOError:
+            log.exception("Failed to write to file %s" % (args.output))
+            exit(EC_OUTPUT_WRITE_FAIL)
+
+
+def main():
+    """Main function of multiplex"""
+
+    global args
+    global log
+
+    logformat = '%(asctime)s %(levelname)s %(name)s:  %(message)s'
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG, format=logformat)
+    else:
+        logging.basicConfig(level=logging.INFO, format=logformat)
+    log = logging.getLogger(__name__)
+
+    input_json = load_input_file(args.input)
+
+    if input_json is None:
+        return(EC_JSON_FAIL)
+    if not validate_schema(input_json):
+        return(EC_SCHEMA_FAIL)
+
+    if args.req is not None:
+        if load_requirements(args.req) is None:
+            return(EC_REQUIREMENTS_FAIL)
 
     combined_json = load_param_sets(input_json)
     multiplexed_json = multiplex_sets(combined_json)
     finalized_json = convert_vals(multiplexed_json)
 
-    print(dump_json(finalized_json))
+    dump_output(finalized_json)
 
-    return(0)
+    return(EC_SUCCESS)
 
 
 if __name__ == "__main__":
-    process_options()
-
+    args = process_options()
     exit(main())
