@@ -82,6 +82,9 @@
                     "type": "string",
                     "enum": ["client", "server", "all"]
                 },
+                "id": {
+                    "type": "string"
+                },
                 "enabled": {
                     "type": "string",
                     "enum": ["yes", "no"]
