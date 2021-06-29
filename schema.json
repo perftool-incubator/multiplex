@@ -46,16 +46,12 @@
                     },
                     "params": {
                         "type": "array",
-                        "minItems": 1,
                         "uniqueItems": true,
                         "items": {
                             "$ref": "#/definitions/mv_param"
                         }
                     }
                 },
-                "required": [
-                    "params"
-                ],
                 "additionalProperties": false
             }
         }
