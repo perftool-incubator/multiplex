@@ -63,6 +63,13 @@ Marking params as enabled ("enabled": "yes") or disabled ("enabled": "no") is op
 Multiplex assumes that the param is enabled by default when the `enabled` keyword is not
 present. All the `enabled` markers are stripped from the input json file.
 
+For multiple instances of the same role, params can be distinguished by  using the `id`
+key as follows:
+```
+    { "arg": "ifname", "vals": [ "eth1", "eth2" ], "role": "server", "id": "1" },
+    { "arg": "ifname", "vals": [ "net1", "net2" ], "role": "server", "id": "2" }
+```
+
 ## Requirements file
 The requirements file defines all the validation and transformation parameters for a
 specific benchmark. The file contains the following blocks: `defaults` and `essentials`,
