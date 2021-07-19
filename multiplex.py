@@ -6,6 +6,7 @@ import copy
 import traceback
 import os
 import logging
+import re
 
 from jsonschema import validate
 from jsonschema import exceptions
@@ -15,6 +16,7 @@ EC_SCHEMA_FAIL=1
 EC_JSON_FAIL=2
 EC_REQUIREMENTS_FAIL=3
 
+validation_dict = {}
 
 def process_options():
     """Process arguments from command line"""
@@ -68,6 +70,13 @@ def param_enabled(param_obj):
         del param_obj["enabled"]
     return(enabled)
 
+def param_validated(param, val):
+    """Return True if matches validation pattern, False otherwise"""
+    if param in validation_dict:
+        pattern = validation_dict[param]
+        if re.match(pattern, val) is None:
+            return(False)
+    return(True)
 
 def load_param_sets(sets_block):
     """Load params from sets block"""
@@ -115,12 +124,19 @@ def multiplex_set(obj):
 
         if len(obj[set_idx]['vals']) > 1:
             for copies in range(0, len(obj[set_idx]['vals'])):
+                param = obj[set_idx]['arg']
+                val = obj[set_idx]['vals'][copies]
+                # check if param passes validation pattern
+                if validation_dict is not None and bool(validation_dict):
+                    if not param_validated(param, val):
+                        log.error("Failed validation for %s" % (param))
+                        return([])
+
                 new_obj.append(copy.deepcopy(obj))
                 new_idx = len(new_obj) - 1
                 for copy_idx in range(len(new_obj[new_idx][set_idx]['vals']) - 1, -1, -1):
                     if copy_idx != copies:
                         del new_obj[new_idx][set_idx]['vals'][copy_idx]
-
             break
 
     return(new_obj)
@@ -162,6 +178,7 @@ def convert_vals(obj):
 
 def load_requirements(req_arg):
     """Load requirements json file from --requirements arg"""
+
     #TODO: requirements file is loaded but still noop
     try:
         req_fp = open(req_arg, 'r')
@@ -170,7 +187,19 @@ def load_requirements(req_arg):
     except:
         log.exception("Could not load requirements file %s" % (req_arg))
         return(None)
+
     return(req_json)
+
+
+def create_validation_dict(req_json):
+    """Create pattern dict from requirements json validation groups"""
+    val_dict = {}
+    validations = req_json["validations"]
+    for _vgroup in validations:
+        for _param in validations[_vgroup]["args"]:
+            _pattern = { _param: validations[_vgroup]["vals"] }
+            val_dict.update(_pattern)
+    return(val_dict)
 
 def load_input_file(mv_file):
     """Load input file with multi-value params and return a json object"""
@@ -241,9 +270,13 @@ def main():
     if not validate_schema(input_json):
         return(EC_SCHEMA_FAIL)
 
+    validation_dict = {}
     if args.req is not None:
-        if load_requirements(args.req) is None:
+        json_req = load_requirements(args.req)
+        if json_req is None:
             return(EC_REQUIREMENTS_FAIL)
+        else:
+            validation_dict = create_validation_dict(json_req)
 
     combined_json = load_param_sets(input_json)
     multiplexed_json = multiplex_sets(combined_json)
