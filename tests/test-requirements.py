@@ -21,7 +21,7 @@ class TestRequirements:
     def validate_param(self, request):
         multiplex.log = multiplex.logging.getLogger()
         multiplex.validation_dict = { "duration": "^[1-9]+[0-9]*$" }
-        validated = multiplex.param_validated(multiplex.validation_dict.keys()[0], request.param)
+        validated = multiplex.param_validated(next(iter(multiplex.validation_dict)), request.param)
         return(validated)
 
     """Test if requirements json file is successfully loaded"""
