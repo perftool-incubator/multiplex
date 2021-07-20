@@ -92,6 +92,7 @@ class TestJSON:
     """Test if multiplex_sets transforms multi-value sets into multiplexed single value ones"""
     @pytest.mark.parametrize("load_json", [ json_enabled_sets_expected ], indirect=True)
     def test_multiplex_sets(self, load_json):
+        global validation_dict
         multiplexed_json = multiplex.multiplex_sets(load_json)
         short_json = json.dumps(multiplexed_json, sort_keys=True, indent=None).replace("\n", "")
         expected_json = self.json_single_value_sets_expected.replace("\n", "")

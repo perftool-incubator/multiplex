@@ -16,8 +16,6 @@ EC_SCHEMA_FAIL=1
 EC_JSON_FAIL=2
 EC_REQUIREMENTS_FAIL=3
 
-validation_dict = {}
-
 def process_options():
     """Process arguments from command line"""
     parser = argparse.ArgumentParser(
@@ -75,6 +73,9 @@ def param_validated(param, val):
     if param in validation_dict:
         pattern = validation_dict[param]
         if re.match(pattern, val) is None:
+            log.error("ERROR: Validation failed for param='%s', "
+                      "val='%s'. Values must match the pattern '%s'."
+                      % (param, val, pattern))
             return(False)
     return(True)
 
@@ -127,9 +128,8 @@ def multiplex_set(obj):
                 param = obj[set_idx]['arg']
                 val = obj[set_idx]['vals'][copies]
                 # check if param passes validation pattern
-                if validation_dict is not None and bool(validation_dict):
+                if 'validation_dict' in globals() and validation_dict is not None:
                     if not param_validated(param, val):
-                        log.error("Failed validation for %s" % (param))
                         return([])
 
                 new_obj.append(copy.deepcopy(obj))
@@ -255,6 +255,7 @@ def main():
 
     global args
     global log
+    global validation_dict
 
     logformat = '%(asctime)s %(levelname)s %(name)s:  %(message)s'
     if args.debug:
