@@ -15,6 +15,7 @@ EC_SUCCESS=0
 EC_SCHEMA_FAIL=1
 EC_JSON_FAIL=2
 EC_REQUIREMENTS_FAIL=3
+EC_VALIDATIONS_FAIL=4
 
 def process_options():
     """Process arguments from command line"""
@@ -130,7 +131,7 @@ def multiplex_set(obj):
                 # check if param passes validation pattern
                 if 'validation_dict' in globals() and validation_dict is not None:
                     if not param_validated(param, val):
-                        return([])
+                        return(None)
 
                 new_obj.append(copy.deepcopy(obj))
                 new_idx = len(new_obj) - 1
@@ -152,6 +153,8 @@ def multiplex_sets(obj):
 
         for sets_idx in range(0, len(new_obj)):
             new_sets = multiplex_set(new_obj[sets_idx])
+            if new_sets is None:
+                return(None)
             if len(new_sets):
                 restart = True
                 del new_obj[sets_idx]
@@ -281,8 +284,11 @@ def main():
 
     combined_json = load_param_sets(input_json)
     multiplexed_json = multiplex_sets(combined_json)
-    finalized_json = convert_vals(multiplexed_json)
 
+    if multiplexed_json is None:
+        return(EC_VALIDATIONS_FAIL)
+
+    finalized_json = convert_vals(multiplexed_json)
     dump_output(finalized_json)
 
     return(EC_SUCCESS)
