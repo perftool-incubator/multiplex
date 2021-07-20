@@ -1,0 +1,16 @@
+{
+    "global-options": [
+        {
+            "name": "global",
+            "params": [
+                { "arg": "duration", "vals": [ "20", "bar" ], "role": "client" },
+                { "arg": "tracer", "vals": [ "osnoise", "timerlat", "foo" ], "role": "client" }
+            ]
+        }
+    ],
+    "sets": [
+        {
+            "include": "global"
+        }
+    ]
+}

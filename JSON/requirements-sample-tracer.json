@@ -1,0 +1,15 @@
+{
+    "presets": {},
+    "validations": {
+        "tracers": {
+            "description": "supported tracing tools",
+            "args": [ "tracer" ],
+            "vals": "^osnoise$|^timerlat$"          
+        },
+        "integer": {
+            "description": "whole-numbers",
+            "args": [ "duration" ],
+            "vals": "^[1-9]+[0-9]*$"
+        }
+    }
+}
