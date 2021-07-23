@@ -96,7 +96,7 @@ def load_param_sets(sets_block):
                 if set['include'] == global_opt['name']:
                     for global_param in global_opt['params']:
                         if param_enabled(global_param):
-                            param_set.append(global_param)
+                            param_set.append(copy.deepcopy(global_param))
 
         # handle params in each set
         if 'params' in set:
