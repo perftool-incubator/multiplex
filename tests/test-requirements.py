@@ -2,8 +2,8 @@
 
 import pytest
 import json
-import multiplex
 import re
+import multiplex
 
 class TestRequirements:
 
@@ -34,18 +34,17 @@ class TestRequirements:
     """Test if validation dict is successfully created"""
     @pytest.mark.parametrize("load_req", [ requirements_json ], indirect=True)
     def test_create_validation_dict(self, load_req):
-        val_dict = multiplex.create_validation_dict(load_req)
+        multiplex.create_validation_dict(load_req)
 
-        assert val_dict is not None
-        assert 'bs' in val_dict.keys()
+        assert multiplex.validation_dict is not {}
+        assert 'bs' in multiplex.validation_dict.keys()
 
-    """Test if validation dict has empty presets"""
+    """Test if validation dict has empty presets (which is ok)"""
     @pytest.mark.parametrize("load_req", [ validation_json_fail ], indirect=True)
     def test_empty_presets(self, load_req):
-        val_dict = multiplex.create_validation_dict(load_req)
+        multiplex.create_validation_dict(load_req)
 
-        assert val_dict is not None
-        assert 'presets' in load_req
+        assert multiplex.validation_dict is not {}
         assert load_req['presets'] == {}
 
     """Test invalid vals"""

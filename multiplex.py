@@ -7,15 +7,22 @@ import traceback
 import os
 import logging
 import re
+import itertools
 
 from jsonschema import validate
 from jsonschema import exceptions
+from collections import defaultdict
 
 EC_SUCCESS=0
 EC_SCHEMA_FAIL=1
 EC_JSON_FAIL=2
 EC_REQUIREMENTS_FAIL=3
 EC_VALIDATIONS_FAIL=4
+
+args = None
+log = None
+validation_dict = {}
+transform_dict = defaultdict(list)
 
 def process_options():
     """Process arguments from command line"""
@@ -46,7 +53,6 @@ def process_options():
     args = parser.parse_args()
     return(args)
 
-
 def dump_json(obj, format = 'readable'):
     """Dump json in readable or parseable format"""
     # Parseable format has no indentation
@@ -58,7 +64,6 @@ def dump_json(obj, format = 'readable'):
 
     return json.dumps(obj, indent = indentation, separators = (',', sep),
                       sort_keys = True)
-
 
 def param_enabled(param_obj):
     """Return True if param is enabled, False otherwise"""
@@ -109,63 +114,102 @@ def load_param_sets(sets_block):
 
     return(mv_array)
 
-
-def multiplex_set(obj):
-    """Parse vals from one set"""
-    new_obj = []
-
+def sanitize_set(obj):
+    """Update set with roles and remove disabled params"""
     for set_idx in range(0, len(obj)):
 
-        # ignores/skips param if not enabled
+        # remove param from the set obj if not enabled
         if not param_enabled(obj[set_idx]):
+            del obj[set_idx]
             continue
 
         # default to client role if not specified
         if "role" not in obj[set_idx]:
             obj[set_idx]['role'] = "client"
 
-        if len(obj[set_idx]['vals']) > 1:
-            for copies in range(0, len(obj[set_idx]['vals'])):
-                param = obj[set_idx]['arg']
-                val = obj[set_idx]['vals'][copies]
-                # check if param passes validation pattern
-                if 'validation_dict' in globals() and validation_dict is not None:
-                    if not param_validated(param, val):
-                        return(None)
+    return obj
 
-                new_obj.append(copy.deepcopy(obj))
-                new_idx = len(new_obj) - 1
-                for copy_idx in range(len(new_obj[new_idx][set_idx]['vals']) - 1, -1, -1):
-                    if copy_idx != copies:
-                        del new_obj[new_idx][set_idx]['vals'][copy_idx]
-            break
+def multiplex_set(raw_set):
+    """Transform one multi-value set into multiple single-value sets"""
+    # step 1: check role, remove disabled params
+    obj = sanitize_set(raw_set)
+    combinations = []
 
-    return(new_obj)
+    # iterate over the original set obj
+    for set_idx in range(0, len(obj)):
+        _list = []
 
+        # get the number of param vals
+        _pvals = len(obj[set_idx]['vals'])
+        for copies in range(0, _pvals):
+            param = obj[set_idx]['arg']
+            val = obj[set_idx]['vals'][copies]
+
+            # check if param passes validation pattern
+            if bool(validation_dict):
+                if not param_validated(param, val):
+                    return None
+
+            # step 2: add params vals to a list
+            _list.append(val)
+
+        """
+        a set with:
+            { "arg": "mtu", "vals": ["1518", "9216"] },
+            { "arg": "frame-size", "vals": ["64", "9000"] }
+        becomes a list of param lists...
+            combinations=[[64,9000],[1518,9216]]
+        """
+        # step 3: append lists to combinations outter list
+        combinations.append(_list)
+
+    # step 4: update vals for all combinations
+    _obj = update_vals(obj, combinations)
+    return _obj
+
+def update_vals(obj, combinations):
+    """Update vals list with the cartesian product"""
+    new_obj = []
+    """
+    a combinations list with:
+        combinations=[[64,9000],[1518,9216]]
+    becomes a list of tuples (cartesian product):
+        cprod =[(64,1518), (64,9216), (9000,1518), (9000,9216)]
+    """
+    # step 1: build the cartesian product
+    cprod = list(itertools.product(*combinations))
+
+    """
+    a set with:
+        { "arg": "mtu", "vals": ["1518", "9216"] },
+        { "arg": "frame-size", "vals": ["64", "9000"] }
+    becomes 4 identical copies, unchanged values yet...
+        [ <copy 1> ], [ <copy 2> ], [ <copy 3> ], [ <copy 4> ]
+    """
+    # step 2: create a copy of the entire set for each combination
+    for i in range(len(cprod)):
+        new_obj.append(copy.deepcopy(obj))
+
+    # step 3: update vals with single value from the cartesian product
+    for set_idx in range(0, len(new_obj)):
+        for par_idx in range(0, len(new_obj[set_idx])):
+            # vals now is an array containing one single val
+            new_obj[set_idx][par_idx]['vals'] = [cprod[set_idx][par_idx]]
+
+    return new_obj
 
 def multiplex_sets(obj):
     """Parse multiple sets"""
-    new_obj = copy.deepcopy(obj)
+    multiplexed_sets = []
 
-    restart = True
-    while restart:
-        restart = False
+    for sets_idx in range(0, len(obj)):
+        new_set = multiplex_set(obj[sets_idx])
+        if new_set is None:
+            return(None)
+        if len(new_set):
+            multiplexed_sets += new_set
 
-        for sets_idx in range(0, len(new_obj)):
-            new_sets = multiplex_set(new_obj[sets_idx])
-            if new_sets is None:
-                return(None)
-            if len(new_sets):
-                restart = True
-                del new_obj[sets_idx]
-
-                for new_set_idx in range(0, len(new_sets)):
-                    new_obj.insert(sets_idx + new_set_idx, new_sets[new_set_idx])
-
-                break
-
-    return(new_obj)
-
+    return multiplexed_sets
 
 def convert_vals(obj):
     """Convert vals into val for each single-value set"""
@@ -177,7 +221,6 @@ def convert_vals(obj):
             del param['vals']
 
     return(new_obj)
-
 
 def load_requirements(req_arg):
     """Load requirements json file from --requirements arg"""
@@ -193,16 +236,14 @@ def load_requirements(req_arg):
 
     return(req_json)
 
-
 def create_validation_dict(req_json):
-    """Create pattern dict from requirements json validation groups"""
-    val_dict = {}
+    """Create validation dict from requirements"""
     validations = req_json["validations"]
     for _vgroup in validations:
         for _param in validations[_vgroup]["args"]:
-            _pattern = { _param: validations[_vgroup]["vals"] }
-            val_dict.update(_pattern)
-    return(val_dict)
+            _vals = validations[_vgroup]["vals"]
+            _pattern = { _param: _vals }
+            validation_dict.update(_pattern)
 
 def load_input_file(mv_file):
     """Load input file with multi-value params and return a json object"""
@@ -252,13 +293,8 @@ def dump_output(final_json):
             log.exception("Failed to write to file %s" % (args.output))
             exit(EC_OUTPUT_WRITE_FAIL)
 
-
 def main():
     """Main function of multiplex"""
-
-    global args
-    global log
-    global validation_dict
 
     logformat = '%(asctime)s %(levelname)s %(name)s:  %(message)s'
     if args.debug:
@@ -274,13 +310,12 @@ def main():
     if not validate_schema(input_json):
         return(EC_SCHEMA_FAIL)
 
-    validation_dict = {}
     if args.req is not None:
         json_req = load_requirements(args.req)
         if json_req is None:
             return(EC_REQUIREMENTS_FAIL)
         else:
-            validation_dict = create_validation_dict(json_req)
+            create_validation_dict(json_req)
 
     combined_json = load_param_sets(input_json)
     multiplexed_json = multiplex_sets(combined_json)
