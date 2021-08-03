@@ -19,8 +19,6 @@ EC_JSON_FAIL=2
 EC_REQUIREMENTS_FAIL=3
 EC_VALIDATIONS_FAIL=4
 
-args = None
-log = None
 validation_dict = {}
 transform_dict = defaultdict(list)
 
@@ -51,7 +49,7 @@ def process_options():
                         help = 'Print debug messages to stderr')
 
     args = parser.parse_args()
-    return(args)
+    return args
 
 def dump_json(obj, format = 'readable'):
     """Dump json in readable or parseable format"""
@@ -72,18 +70,18 @@ def param_enabled(param_obj):
         if param_obj['enabled'].lower() == "no":
             enabled=False
         del param_obj["enabled"]
-    return(enabled)
+    return enabled
 
 def param_validated(param, val):
     """Return True if matches validation pattern, False otherwise"""
     if param in validation_dict:
         pattern = validation_dict[param]
         if re.match(pattern, val) is None:
-            log.error("ERROR: Validation failed for param='%s', "
+            log.error("Validation failed for param='%s', "
                       "val='%s'. Values must match the pattern '%s'."
                       % (param, val, pattern))
-            return(False)
-    return(True)
+            return False
+    return True
 
 def load_param_sets(sets_block):
     """Load params from sets block"""
@@ -112,7 +110,7 @@ def load_param_sets(sets_block):
         # mv_array is the outter array containing the inner sets
         mv_array.append(param_set)
 
-    return(mv_array)
+    return mv_array
 
 def sanitize_set(obj):
     """Update set with roles and remove disabled params"""
@@ -148,7 +146,7 @@ def multiplex_set(raw_set):
             # check if param passes validation pattern
             if bool(validation_dict):
                 if not param_validated(param, val):
-                    return None
+                    exit(EC_VALIDATIONS_FAIL)
 
             # step 2: add params vals to a list
             _list.append(val)
@@ -205,7 +203,7 @@ def multiplex_sets(obj):
     for sets_idx in range(0, len(obj)):
         new_set = multiplex_set(obj[sets_idx])
         if new_set is None:
-            return(None)
+            return None
         if len(new_set):
             multiplexed_sets += new_set
 
@@ -220,7 +218,7 @@ def convert_vals(obj):
             param['val'] = param['vals'][0]
             del param['vals']
 
-    return(new_obj)
+    return new_obj
 
 def load_requirements(req_arg):
     """Load requirements json file from --requirements arg"""
@@ -232,9 +230,9 @@ def load_requirements(req_arg):
         req_fp.close()
     except:
         log.exception("Could not load requirements file %s" % (req_arg))
-        return(None)
+        return None
 
-    return(req_json)
+    return req_json
 
 def create_validation_dict(req_json):
     """Create validation dict from requirements"""
@@ -254,7 +252,7 @@ def load_input_file(mv_file):
     except:
         log.exception("Could not load input file %s" % (mv_file))
         return(None)
-    return(input_json)
+    return input_json
 
 def validate_schema(input_json):
     """Validate json with schema file"""
@@ -264,22 +262,14 @@ def validate_schema(input_json):
         schema_contents = json.load(schema_fp)
         schema_fp.close()
         validate(instance = input_json, schema = schema_contents)
-    except IOError:
-        log.exception("Could not open schema file %s" % (json_schema_file))
-        return(False)
-    except ValueError:
-        log.exception("Could not load a valid JSON schema from %s"
-                      % (json_schema_file))
-        return(False)
-    except ValueError:
+    except:
         log.exception("JSON validation failed for %s using schema %s"
                       % (input_json, json_schema_file))
-        return(False)
-    return(True)
+        return False
+    return True
 
 def dump_output(final_json):
     """Dump output multiplexed json to stdout or file"""
-
     if args.output is None:
         # dump to stdout
         print(dump_json(final_json))
@@ -289,12 +279,15 @@ def dump_output(final_json):
             output_file=open(args.output,mode="w",encoding="utf-8")
             output_file.write(dump_json(final_json))
             output_file.close()
-        except IOError:
+        except:
             log.exception("Failed to write to file %s" % (args.output))
             exit(EC_OUTPUT_WRITE_FAIL)
 
 def main():
     """Main function of multiplex"""
+
+    global args
+    global log
 
     logformat = '%(asctime)s %(levelname)s %(name)s:  %(message)s'
     if args.debug:
@@ -320,13 +313,10 @@ def main():
     combined_json = load_param_sets(input_json)
     multiplexed_json = multiplex_sets(combined_json)
 
-    if multiplexed_json is None:
-        return(EC_VALIDATIONS_FAIL)
-
     finalized_json = convert_vals(multiplexed_json)
     dump_output(finalized_json)
 
-    return(EC_SUCCESS)
+    return EC_SUCCESS
 
 
 if __name__ == "__main__":
