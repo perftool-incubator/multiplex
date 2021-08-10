@@ -20,7 +20,8 @@ EC_REQUIREMENTS_FAIL=3
 EC_VALIDATIONS_FAIL=4
 
 validation_dict = {}
-transform_dict = defaultdict(list)
+convert_dict = {}
+transform_dict = {}
 
 def process_options():
     """Process arguments from command line"""
@@ -127,6 +128,37 @@ def sanitize_set(obj):
 
     return obj
 
+def transform_param_val(param, val):
+    """Param validation, transformation and conversion"""
+    # check if param passes validation pattern
+    if bool(validation_dict):
+        if not param_validated(param, val):
+            exit(EC_VALIDATIONS_FAIL)
+
+    if bool(convert_dict):
+        if param in convert_dict:
+            _unit = re.sub(r"[^A-Za-z]+", "", val).upper()
+            _num = str(float(re.sub(r"[^0123456789\.]", "", val)))
+            _convert = next(iter(convert_dict[param]))
+            _cexpr = str(convert_dict[param][_convert][_unit])
+
+            _val = eval(_num + " * " + _cexpr)
+            if float(_val).is_integer():
+                _val = int(_val)
+            val = str(_val) + _convert
+
+    if bool(transform_dict):
+        if (param in transform_dict and
+                "search" in transform_dict[param] and
+                "replace" in transform_dict[param]):
+            _search = transform_dict[param]["search"]
+            _replace = transform_dict[param]["replace"]
+            try:
+                val = re.sub(rf'{_search}', rf'{_replace}', val)
+            except re.error:
+                log.exception("Invalid regex for search/replace.")
+    return val
+
 def multiplex_set(raw_set):
     """Transform one multi-value set into multiple single-value sets"""
     # step 1: check role, remove disabled params
@@ -143,10 +175,7 @@ def multiplex_set(raw_set):
             param = obj[set_idx]['arg']
             val = obj[set_idx]['vals'][copies]
 
-            # check if param passes validation pattern
-            if bool(validation_dict):
-                if not param_validated(param, val):
-                    exit(EC_VALIDATIONS_FAIL)
+            val = transform_param_val(param, val)
 
             # step 2: add params vals to a list
             _list.append(val)
@@ -242,6 +271,29 @@ def create_validation_dict(req_json):
             _vals = validations[_vgroup]["vals"]
             _pattern = { _param: _vals }
             validation_dict.update(_pattern)
+
+            if "convert" in validations[_vgroup]:
+                _convert = validations[_vgroup]["convert"]
+                if "units" in req_json and len(req_json["units"]) > 0:
+                    if _vgroup in req_json["units"]:
+                        if _convert in req_json["units"][_vgroup]:
+                            _cexpr = req_json["units"][_vgroup][_convert]
+                            _conversion = { _convert: _cexpr }
+                            convert_dict.update({ _param: _conversion })
+                        else:
+                            log.warning("Conversion '%s' has not been found "
+                                        " and will be skipped.", _convert)
+                    else:
+                        log.warning("No conversion has been found "
+                                     "for the param '%s'.", _param)
+                else:
+                    log.warning("The 'units' section has not been found. "
+                                "Ignoring all conversions.")
+
+            if "transform" in validations[_vgroup]:
+                _transform = validations[_vgroup]["transform"]
+                _replace = { _param: _transform }
+                transform_dict.update(_replace)
 
 def load_input_file(mv_file):
     """Load input file with multi-value params and return a json object"""
