@@ -73,8 +73,8 @@ key as follows:
 ## Requirements file
 The requirements file defines all the validation and transformation parameters for a
 specific benchmark. The file contains the following blocks: `defaults` and `essentials`,
-as part of the `presets` array; and `validations`. The example below is a simplified
-version of fio benchmark requirements file:
+as part of the `presets` section; `validations` and `units` are the other sections.
+The example below is a simplified version of fio benchmark requirements file:
 ```
 {
     "presets": {
@@ -92,12 +92,15 @@ version of fio benchmark requirements file:
         ]
     },
     "validations": {
-        "size_KMG" : {
-            "description" : "bytes in k/K (1024), m/M (1024^2) or g/G (1024^3): 4k 16M 1g",
-            "args" : [ "bs" ],
-            "vals" : "[0-9]+[kbmgKBMG]",
-            "transform" : [ "s/([0-9]+)[gG]/($1*1024).\"M\"/e",
-                            "s/([0-9]+)[mM]/($1*1024).\"K\"/e" ]
+        "size_BKMG": {
+            "description": "bytes in B/K/M/G, converted to K, transformed in KB",
+            "args": [ "frame-size" ],
+            "vals": "[0-9]+[BKMG]?",
+            "convert": "K",
+            "transform": {
+                "search": "[^0123456789\\.]",
+                "replace": "KB"
+            }
         },
         "log_types" : {
             "description" : "all possible log types",
@@ -108,6 +111,15 @@ version of fio benchmark requirements file:
             "description" : "all possible testtypes",
             "args" : [ "rw" ],
             "vals" : "^(|rand)(read|write|trim)$|^readwrite$|^randrw$|^trimwrite$"
+        }
+    },
+    "units": {
+       "size_BKMG": {
+            "": { "": "1", "B": "1", "K": "1024", "M": "1024*1024", "G": "1024*1024*1024" },
+            "B": { "": "1", "B": "1", "K": "1024", "M": "1024*1024", "G": "1024*1024*1024" },
+            "K": { "": "1/1024", "B": "1/1024", "K": "1", "M": "1024", "G": "1024*1024" },
+            "M": { "": "1/1024/1024", "B": "1/1024/1024", "K": "1/1024", "M": "1", "G": "1024" },
+            "G": { "": "1/1024/1024/1024", "B": "1/1024/1024/1024", "K": "1/1024/1024", "M": "1/1024", "G": "1" }
         }
     }
 }
@@ -141,11 +153,33 @@ need to function properly. Theses parameters are always appended to the list of
 parameters to use to guarantee basic functionality of the harness.
 
 
-### validation
+### validations
 Defines all the acceptable param values by validating the parameters with the
 `value` regex. The values are transformed by applying the `transform` regex,
-if present. The `transform` key is optional.
+if present. The `transform` key (optional) contains the `search` and `replace`
+regular expressions to substitute the `vals` key from the multi-value params
+file.
 
+Note: The regex pair `search`/`replace` must be in raw string format to
+match and process the substitutions w/ backslashes (escapes) properly. Also,
+since the JSON has its own escaping, backslashes must be doubled. For instance,
+"[^0123456789\.]" becomes "[^0123456789\\.]" to match all numeric values w/
+decimal point.
+
+Param transformation happens after the param conversion. If the `convert` key
+is "K", and tranformation replace is "KB", the value "1024" is first converted
+to K, "1K" and then transformed to KB, "1KB". The benchmark will receive the
+param value as "1KB".
+
+### units
+Defines all the conversion units to each of the param types. Multiplex converts
+the contents of `vals` into the target `convert` key by executing the
+expressions from the `units` section.
+
+The param group defined in the `validations` should match the group in the
+`units` section. For a given `size_BKMG`, which might contain multiple args as
+"frame-size", "mtu", etc., multiplex finds an equivalent `size_BKMG` in the units
+section to do the conversions.
 
 ## Output single-value JSON
 Each data set from the `sets` section, combined with the multi-value paramters included
