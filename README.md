@@ -93,13 +93,13 @@ The example below is a simplified version of fio benchmark requirements file:
     },
     "validations": {
         "size_BKMG": {
-            "description": "bytes in B/K/M/G, converted to K, transformed in KB",
+            "description": "bytes in B/K/M/G, converted to K, shown in KB",
             "args": [ "frame-size" ],
-            "vals": "[0-9]+[BKMG]?",
+            "vals": "^([1-9][0-9]*)+[BKMG]?",
             "convert": "K",
             "transform": {
-                "search": "[^0123456789\\.]",
-                "replace": "KB"
+                "search": "^([1-9][0-9]*).$",
+                "replace": "\\1KB"
             }
         },
         "log_types" : {
@@ -163,8 +163,7 @@ file.
 Note: The regex pair `search`/`replace` must be in raw string format to
 match and process the substitutions w/ backslashes (escapes) properly. Also,
 since the JSON has its own escaping, backslashes must be doubled. For instance,
-"[^0123456789\.]" becomes "[^0123456789\\.]" to match all numeric values w/
-decimal point.
+`"replace": "\1KB"` becomes `"replace": "\\1KB"`.
 
 Param transformation happens after the param conversion. If the `convert` key
 is "K", and tranformation replace is "KB", the value "1024" is first converted

@@ -11,7 +11,7 @@
         {
             "include": "common-params",
             "params": [
-                { "arg": "frame-size", "vals": [ "512", "1024B", "1k", "0.01M", "9k" ], "role": "client" },
+                { "arg": "frame-size", "vals": [ "512", "1024B", "1k", "1M" ], "role": "client" },
                 { "arg": "testpmd-burst", "vals": [ "128" ], "role": "client" }
             ]
         }

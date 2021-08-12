@@ -137,15 +137,19 @@ def transform_param_val(param, val):
 
     if bool(convert_dict):
         if param in convert_dict:
-            _unit = re.sub(r"[^A-Za-z]+", "", val).upper()
-            _num = str(float(re.sub(r"[^0123456789\.]", "", val)))
+            _unit = re.sub(rf'^([1-9][0-9]*)', rf'', val)
+            _num = re.sub(rf'^([1-9][0-9]*).$', rf'\1', val)
             _convert = next(iter(convert_dict[param]))
-            _cexpr = str(convert_dict[param][_convert][_unit])
 
-            _val = eval(_num + " * " + _cexpr)
-            if float(_val).is_integer():
-                _val = int(_val)
-            val = str(_val) + _convert
+            if _unit in convert_dict[param][_convert]:
+                _cexpr = str(convert_dict[param][_convert][_unit])
+
+                _val = eval(_num + " * " + _cexpr)
+                if float(_val).is_integer():
+                    _val = int(_val)
+                val = str(_val) + _convert
+            else:
+                log.warning("Unit %s has not been found in `units`" % _unit)
 
     if bool(transform_dict):
         if (param in transform_dict and
