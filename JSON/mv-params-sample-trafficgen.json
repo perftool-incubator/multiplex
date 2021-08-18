@@ -1,0 +1,19 @@
+{
+    "global-options": [
+        {
+            "name": "common-params",
+            "params": [
+                { "arg": "mtu", "vals": [ "9216" ] }
+            ]
+        }
+    ],
+    "sets": [
+        {
+            "include": "common-params",
+            "params": [
+                { "arg": "frame-size", "vals": [ "512", "1024B", "1k", "1M" ], "role": "client" },
+                { "arg": "testpmd-burst", "vals": [ "128" ], "role": "client" }
+            ]
+        }
+    ]
+}
