@@ -22,23 +22,16 @@
             "type": "object",
             "patternProperties": {
                 "^[A-Za-z]+[A-Za-z0-9_-]*$": {
-                    "type": "object",
-                    "items": {
-                        "$ref": "#/definitions/validation_obj"
-                    }
+                    "$ref": "#/definitions/validation_obj"
                 }
             },
-            "additionalProperties": false,
-            "required": [ "args", "vals" ]
+            "additionalProperties": false
         },
         "units": {
             "type": "object",
             "patternProperties": {
                 "^[A-Za-z]+[A-Za-z0-9_-]*$": {
-                    "type": "object",
-                    "items": {
-                        "$ref": "#/definitions/unit_obj"
-                    }
+                    "$ref": "#/definitions/unit_obj"
                 }
             },
             "additionalProperties": false
