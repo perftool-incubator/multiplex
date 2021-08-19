@@ -254,20 +254,6 @@ def convert_vals(obj):
 
     return new_obj
 
-def load_requirements(req_arg):
-    """Load requirements json file from --requirements arg"""
-
-    #TODO: requirements file is loaded but still noop
-    try:
-        req_fp = open(req_arg, 'r')
-        req_json = json.load(req_fp)
-        req_fp.close()
-    except:
-        log.exception("Could not load requirements file %s" % (req_arg))
-        return None
-
-    return req_json
-
 def create_validation_dict(req_json):
     """Create validation dict from requirements"""
     validations = req_json["validations"]
@@ -300,15 +286,15 @@ def create_validation_dict(req_json):
                 _replace = { _param: _transform }
                 transform_dict.update(_replace)
 
-def load_input_file(mv_file):
-    """Load input file with multi-value params and return a json object"""
+def load_json_file(json_file):
+    """Load JSON file and return a json object"""
     try:
-        input_fp = open(mv_file, 'r')
+        input_fp = open(json_file, 'r')
         input_json = json.load(input_fp)
         input_fp.close()
     except:
-        log.exception("Could not load input file %s" % (mv_file))
-        return(None)
+        log.exception("Could not load JSON file %s" % (json_file))
+        return None
     return input_json
 
 def validate_schema(input_json, schema_file):
@@ -353,7 +339,7 @@ def main():
         logging.basicConfig(level=logging.INFO, format=logformat)
     log = logging.getLogger(__name__)
 
-    input_json = load_input_file(args.input)
+    input_json = load_json_file(args.input)
 
     if input_json is None:
         return(EC_JSON_FAIL)
@@ -361,7 +347,7 @@ def main():
         return(EC_SCHEMA_FAIL)
 
     if args.req is not None:
-        json_req = load_requirements(args.req)
+        json_req = load_json_file(args.req)
         if json_req is None:
             return(EC_REQUIREMENTS_FAIL)
         if not validate_schema(json_req, "req-schema.json"):

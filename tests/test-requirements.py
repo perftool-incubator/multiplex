@@ -13,7 +13,7 @@ class TestRequirements:
     """Common function to load requirements"""
     @pytest.fixture(scope="function")
     def load_req(self, request):
-        req_json = multiplex.load_requirements(request.param)
+        req_json = multiplex.load_json_file(request.param)
         return(req_json)
 
     """Common function to validate param"""
