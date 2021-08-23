@@ -18,6 +18,7 @@ EC_SCHEMA_FAIL=1
 EC_JSON_FAIL=2
 EC_REQUIREMENTS_FAIL=3
 EC_VALIDATIONS_FAIL=4
+EC_REQ_SCHEMA_FAIL=5
 
 validation_dict = {}
 convert_dict = {}
@@ -77,7 +78,7 @@ def param_validated(param, val):
     """Return True if matches validation pattern, False otherwise"""
     if param in validation_dict:
         pattern = validation_dict[param]
-        if re.match(pattern, val) is None:
+        if re.match(rf'{pattern}', val) is None:
             log.error("Validation failed for param='%s', "
                       "val='%s'. Values must match the pattern '%s'."
                       % (param, val, pattern))
@@ -137,8 +138,8 @@ def transform_param_val(param, val):
 
     if bool(convert_dict):
         if param in convert_dict:
-            _unit = re.sub(rf'^([1-9][0-9]*)', rf'', val)
-            _num = re.sub(rf'^([1-9][0-9]*).$', rf'\1', val)
+            _unit = re.sub(rf'.*[0-9]([a-zA-Z]+)?$', rf'\1', val)
+            _num = re.sub(rf'^(([1-9][0-9]*\.?[0-9]*)|(0?\.[0-9]+)).*', rf'\1', val)
             _convert = next(iter(convert_dict[param]))
 
             if _unit in convert_dict[param][_convert]:
@@ -253,20 +254,6 @@ def convert_vals(obj):
 
     return new_obj
 
-def load_requirements(req_arg):
-    """Load requirements json file from --requirements arg"""
-
-    #TODO: requirements file is loaded but still noop
-    try:
-        req_fp = open(req_arg, 'r')
-        req_json = json.load(req_fp)
-        req_fp.close()
-    except:
-        log.exception("Could not load requirements file %s" % (req_arg))
-        return None
-
-    return req_json
-
 def create_validation_dict(req_json):
     """Create validation dict from requirements"""
     validations = req_json["validations"]
@@ -299,20 +286,20 @@ def create_validation_dict(req_json):
                 _replace = { _param: _transform }
                 transform_dict.update(_replace)
 
-def load_input_file(mv_file):
-    """Load input file with multi-value params and return a json object"""
+def load_json_file(json_file):
+    """Load JSON file and return a json object"""
     try:
-        input_fp = open(mv_file, 'r')
+        input_fp = open(json_file, 'r')
         input_json = json.load(input_fp)
         input_fp.close()
     except:
-        log.exception("Could not load input file %s" % (mv_file))
-        return(None)
+        log.exception("Could not load JSON file %s" % (json_file))
+        return None
     return input_json
 
-def validate_schema(input_json):
+def validate_schema(input_json, schema_file):
     """Validate json with schema file"""
-    json_schema_file = "%s/%s" % (os.path.dirname(os.path.abspath(__file__)), "schema.json")
+    json_schema_file = "%s/JSON/%s" % (os.path.dirname(os.path.abspath(__file__)), schema_file)
     try:
         schema_fp = open(json_schema_file, 'r')
         schema_contents = json.load(schema_fp)
@@ -352,19 +339,20 @@ def main():
         logging.basicConfig(level=logging.INFO, format=logformat)
     log = logging.getLogger(__name__)
 
-    input_json = load_input_file(args.input)
+    input_json = load_json_file(args.input)
 
     if input_json is None:
         return(EC_JSON_FAIL)
-    if not validate_schema(input_json):
+    if not validate_schema(input_json, "schema.json"):
         return(EC_SCHEMA_FAIL)
 
     if args.req is not None:
-        json_req = load_requirements(args.req)
+        json_req = load_json_file(args.req)
         if json_req is None:
             return(EC_REQUIREMENTS_FAIL)
-        else:
-            create_validation_dict(json_req)
+        if not validate_schema(json_req, "req-schema.json"):
+            return(EC_REQ_SCHEMA_FAIL)
+        create_validation_dict(json_req)
 
     combined_json = load_param_sets(input_json)
     multiplexed_json = multiplex_sets(combined_json)

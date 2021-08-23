@@ -6,26 +6,16 @@ import json
 import traceback
 import os
 
-from jsonschema import validate
-
+import multiplex
 
 class TestSchema:
 
-    @pytest.fixture
-    def load_schema(self):
-        json_schema_file = "%s/../%s" % (os.path.dirname(os.path.abspath(__file__)), "schema.json")
-        schema_fp = open(json_schema_file, 'r')
-        try:
-            json_obj = json.load(schema_fp)
-            schema_fp.close()
-        except:
-            return None
+    @pytest.fixture(scope="function")
+    def load_json_file(self, request):
+        return multiplex.load_json_file(request.param)
 
-        return json_obj
-
-
-    @pytest.fixture
-    def load_json(self):
+    @pytest.fixture(scope="function")
+    def load_json_inline(self):
         input_json="""
         {
             "global-options": [
@@ -54,13 +44,6 @@ class TestSchema:
 
         return json_obj
 
-
-    def test_validate_schema(self, load_schema):
-        assert load_schema != None
-
-
-    def test_validate_json(self, load_schema, load_json):
-        try:
-            validate(instance = load_json, schema = load_schema)
-        except:
-            pytest.fail("Invalid JSON")
+    def test_validate_schema(self, load_json_inline):
+        rt = multiplex.validate_schema(load_json_inline, "schema.json")
+        assert rt == True
