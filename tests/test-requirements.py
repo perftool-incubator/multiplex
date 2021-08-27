@@ -7,8 +7,8 @@ import multiplex
 
 class TestRequirements:
 
-    requirements_json = "JSON/requirements-sample-fio.json"
-    validation_json_fail = "JSON/requirements-sample-tracer.json"
+    requirements_json = "tests/JSON/requirements-good.json"
+    req_presets_empty = "tests/JSON/requirements-presets-empty-good.json"
 
     """Common function to load requirements"""
     @pytest.fixture(scope="function")
@@ -40,7 +40,7 @@ class TestRequirements:
         assert 'bs' in multiplex.validation_dict.keys()
 
     """Test if validation dict has empty presets (which is ok)"""
-    @pytest.mark.parametrize("load_req", [ validation_json_fail ], indirect=True)
+    @pytest.mark.parametrize("load_req", [ req_presets_empty ], indirect=True)
     def test_empty_presets(self, load_req):
         multiplex.create_validation_dict(load_req)
 
