@@ -1,0 +1,19 @@
+{
+    "global-options": [
+        {
+            "name": "common-params",
+            "params": [
+                { "arg": "bs", "vals": [ "4k", "8k" ], "role": "client" },
+                { "arg": "rw", "vals": [ "read", "write" ] }
+            ]
+        }
+    ],
+    "sets": [
+        {
+            "include": "common-params",
+            "params": [
+                { "arg": "ioengine", "vals": [ "sync" ] }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,4 @@
+[[{"arg": "rw", "vals": ["read", "write"]},
+{"arg": "ioengine", "vals": ["sync"]}],
+[{"arg": "rw", "vals": ["read", "write"]},
+{"arg": "bs", "vals": ["4k", "1M"]}]]
