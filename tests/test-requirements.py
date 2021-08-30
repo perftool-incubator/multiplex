@@ -7,8 +7,9 @@ import multiplex
 
 class TestRequirements:
 
-    requirements_json = "requirements-good.json"
-    req_presets_empty = "requirements-presets-empty-good.json"
+    requirements_json = "requirements-pass.json"
+    req_presets_empty = "requirements-presets-empty-pass.json"
+    req_single_escape = "requirements-single-escape-fail.json"
 
     """Common function to load requirements"""
     @pytest.fixture(scope="function")
@@ -37,6 +38,12 @@ class TestRequirements:
 
         assert multiplex.validation_dict is not {}
         assert 'bs' in multiplex.validation_dict.keys()
+
+    """Test if validation regex w/ single escape fails"""
+    @pytest.mark.parametrize("load_req", [ req_single_escape ], indirect=True)
+    @pytest.mark.xfail(reason="single escape raises an exception")
+    def test_create_validation_dict(self, load_req):
+        assert multiplex.load_json_file(load_req) is None
 
     """Test if validation dict has empty presets (which is ok)"""
     @pytest.mark.parametrize("load_req", [ req_presets_empty ], indirect=True)
