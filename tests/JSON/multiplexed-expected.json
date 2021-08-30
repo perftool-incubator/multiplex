@@ -1,12 +1,98 @@
-[[{"arg": "rw", "role": "client", "vals": ["read"]},
-{"arg": "ioengine", "role": "client", "vals": ["sync"]}],
-[{"arg": "rw", "role": "client", "vals": ["write"]},
-{"arg": "ioengine", "role": "client", "vals": ["sync"]}],
-[{"arg": "rw", "role": "client", "vals": ["read"]},
-{"arg": "bs", "role": "client", "vals": ["4k"]}],
-[{"arg": "rw", "role": "client", "vals": ["read"]},
-{"arg": "bs", "role": "client", "vals": ["1M"]}],
-[{"arg": "rw", "role": "client", "vals": ["write"]},
-{"arg": "bs", "role": "client", "vals": ["4k"]}],
-[{"arg": "rw", "role": "client", "vals": ["write"]},
-{"arg": "bs", "role": "client", "vals": ["1M"]}]]
+[
+    [
+        {
+            "arg": "rw",
+            "role": "client",
+            "vals": [
+                "read"
+            ]
+        },
+        {
+            "arg": "ioengine",
+            "role": "client",
+            "vals": [
+                "sync"
+            ]
+        }
+    ],
+    [
+        {
+            "arg": "rw",
+            "role": "client",
+            "vals": [
+                "write"
+            ]
+        },
+        {
+            "arg": "ioengine",
+            "role": "client",
+            "vals": [
+                "sync"
+            ]
+        }
+    ],
+    [
+        {
+            "arg": "rw",
+            "role": "client",
+            "vals": [
+                "read"
+            ]
+        },
+        {
+            "arg": "bs",
+            "role": "client",
+            "vals": [
+                "4k"
+            ]
+        }
+    ],
+    [
+        {
+            "arg": "rw",
+            "role": "client",
+            "vals": [
+                "read"
+            ]
+        },
+        {
+            "arg": "bs",
+            "role": "client",
+            "vals": [
+                "1M"
+            ]
+        }
+    ],
+    [
+        {
+            "arg": "rw",
+            "role": "client",
+            "vals": [
+                "write"
+            ]
+        },
+        {
+            "arg": "bs",
+            "role": "client",
+            "vals": [
+                "4k"
+            ]
+        }
+    ],
+    [
+        {
+            "arg": "rw",
+            "role": "client",
+            "vals": [
+                "write"
+            ]
+        },
+        {
+            "arg": "bs",
+            "role": "client",
+            "vals": [
+                "1M"
+            ]
+        }
+    ]
+]

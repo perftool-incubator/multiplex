@@ -1,1 +1,11 @@
-[[{"arg": "rw", "vals": ["read", "write"]}]]
+[
+    [
+        {
+            "arg": "rw",
+            "vals": [
+                "read",
+                "write"
+            ]
+        }
+    ]
+]
