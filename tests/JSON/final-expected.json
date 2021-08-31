@@ -1,0 +1,16 @@
+[
+    [
+        {
+            "arg": "rw",
+            "role": "client",
+            "val": "read"
+        }
+    ],
+    [
+        {
+            "arg": "rw",
+            "role": "client",
+            "val": "write"
+        }
+    ]
+]

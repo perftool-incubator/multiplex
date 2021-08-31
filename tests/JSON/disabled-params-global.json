@@ -1,0 +1,18 @@
+{
+    "global-options": [
+        {
+            "name": "common-params",
+            "params": [
+                { "arg": "rw", "vals": [ "read", "write" ], "enabled": "no" }
+            ]
+        }
+    ],
+    "sets": [
+        {
+            "include": "common-params",
+            "params": [
+                { "arg": "ioengine", "vals": [ "sync" ], "enabled": "yes" }
+            ]
+        }
+    ]
+}
