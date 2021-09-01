@@ -39,20 +39,17 @@ class TestJSON:
 
         assert processed_json == expected_json
 
-
     """Test if multiplex_sets transforms multi-value sets into multiplexed
        single value ones"""
     @pytest.mark.parametrize("load_json_file",
                              [ "enabled-sets-expected.json" ], indirect=True)
     def test_multiplex_sets(self, load_json_file):
-        global validation_dict
         multiplexed_json = multiplex.multiplex_sets(load_json_file)
         processed_json = json.dumps(multiplexed_json, sort_keys=True, indent=4,
                                     separators=(',',': '))
         expected_json = self._load_json("single-value-sets-expected.json")
 
         assert processed_json == expected_json
-
 
     """Test if convert_vals transforms single-value vals key into val"""
     @pytest.mark.parametrize("load_json_file",
@@ -81,7 +78,6 @@ class TestJSON:
     @pytest.mark.parametrize("load_json_file", [ "multi-sets-expected.json" ],
                              indirect=True)
     def test_multiplex_multi_sets(self, load_json_file):
-        global validation_dict
         multiplexed_json = multiplex.multiplex_sets(load_json_file)
         processed_json = json.dumps(multiplexed_json, sort_keys=True, indent=4,
                                     separators=(',',': '))

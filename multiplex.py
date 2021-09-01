@@ -83,6 +83,10 @@ def param_validated(param, val):
                       "val='%s'. Values must match the pattern '%s'."
                       % (param, val, pattern))
             return False
+    elif bool(validation_dict):
+        log.error("Validation for param='%s' not found in the "
+                  "requirements file." % param)
+        return False
     return True
 
 def load_param_sets(sets_block):
