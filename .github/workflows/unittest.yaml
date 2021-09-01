@@ -26,9 +26,15 @@ jobs:
         run: |
           python3 -m venv .venv
           source .venv/bin/activate
-          pip install pytest jsonschema
+          pip install pytest pytest-html jsonschema
 
       - name: Run unit tests
         run: |
           source .venv/bin/activate
-          pytest -v multiplex.py tests/*.py
+          pytest -v --html=report.html --self-contained-html multiplex.py tests/*.py
+
+      - name: Upload html report
+        uses: actions/upload-artifact@v2
+        with:
+          name: report
+          path: report.html
