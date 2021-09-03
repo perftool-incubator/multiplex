@@ -87,3 +87,16 @@ class TestRequirements:
     def test_valid_val_unit(self, validate_param, val_dict):
         multiplex.validation_dict = val_dict
         assert validate_param is True
+
+    """Test missing validation (there is no validation for mtu param)"""
+    def test_missing_validations(self, caplog):
+        multiplex.validation_dict = { "frame-size": "^(([1-9][0-9]*\\.?[0-9]*)|(0?\\.[0-9]+)).*[BKMG]?" }
+        validated = multiplex.param_validated("mtu", "1500")
+        assert validated is False
+        assert "Validation for param='mtu' not found in the requirements file." in caplog.text
+
+    """Test validate_param with empty/missing requirements file (empty validation_dict)"""
+    def test_validate_param_no_requirements(self):
+        multiplex.validation_dict = {}
+        validated = multiplex.param_validated("mtu", "1500")
+        assert validated is True
