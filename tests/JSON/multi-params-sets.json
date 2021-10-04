@@ -17,7 +17,7 @@
         {
             "include": "common-params",
             "params": [
-                { "arg": "bs", "vals": [ "4k", "1M" ] }
+                { "arg": "bs", "vals": [ "4K", "1M" ] }
             ]
         }
     ]

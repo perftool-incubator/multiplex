@@ -43,7 +43,7 @@
             "arg": "bs",
             "role": "client",
             "vals": [
-                "4k"
+                "4K"
             ]
         }
     ],
@@ -75,7 +75,7 @@
             "arg": "bs",
             "role": "client",
             "vals": [
-                "4k"
+                "4K"
             ]
         }
     ],

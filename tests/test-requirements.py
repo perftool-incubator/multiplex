@@ -39,6 +39,20 @@ class TestRequirements:
         assert multiplex.validation_dict is not {}
         assert 'bs' in multiplex.validation_dict.keys()
 
+    """Test if presets dict is successfully loaded"""
+    @pytest.mark.parametrize("load_req", [ requirements_json ], indirect=True)
+    def test_load_presets(self, load_req):
+        assert multiplex.presets_dict == {}
+        multiplex.load_presets(load_req)
+        print(multiplex.presets_dict)
+        assert 'essentials' in multiplex.presets_dict
+        param = next((item for item in multiplex.presets_dict["essentials"] if item["arg"] == "duration"), False)
+        assert param["vals"] == ["60"]
+        param = next((item for item in multiplex.presets_dict["defaults"] if item["arg"] == "bs"), False)
+        assert param["vals"] == ["16K"]
+        param = next((item for item in multiplex.presets_dict["sequential-read"] if item["arg"] == "bs"), False)
+        assert param["vals"] == ["4K"]
+
     """Test if validation regex w/ single escape fails"""
     @pytest.mark.parametrize("load_req", [ req_single_escape ], indirect=True)
     @pytest.mark.xfail(reason="single escape raises an exception")

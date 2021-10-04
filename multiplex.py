@@ -23,6 +23,7 @@ EC_REQ_SCHEMA_FAIL=5
 validation_dict = {}
 convert_dict = {}
 transform_dict = {}
+presets_dict = {}
 
 def process_options():
     """Process arguments from command line"""
@@ -258,6 +259,11 @@ def convert_vals(obj):
 
     return new_obj
 
+def load_presets(json_req):
+    """Create a dict for presets"""
+    if "presets" in json_req:
+        presets_dict.update(json_req["presets"])
+
 def create_validation_dict(req_json):
     """Create validation dict from requirements"""
     validations = req_json["validations"]
@@ -357,10 +363,10 @@ def main():
         if not validate_schema(json_req, "req-schema.json"):
             return(EC_REQ_SCHEMA_FAIL)
         create_validation_dict(json_req)
+        load_presets(json_req)
 
     combined_json = load_param_sets(input_json)
     multiplexed_json = multiplex_sets(combined_json)
-
     finalized_json = convert_vals(multiplexed_json)
     dump_output(finalized_json)
 
