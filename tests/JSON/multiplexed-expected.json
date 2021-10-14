@@ -59,7 +59,7 @@
             "arg": "bs",
             "role": "client",
             "vals": [
-                "1M"
+                "16K"
             ]
         }
     ],
@@ -91,7 +91,7 @@
             "arg": "bs",
             "role": "client",
             "vals": [
-                "1M"
+                "16K"
             ]
         }
     ]

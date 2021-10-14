@@ -27,6 +27,7 @@ Multiplex requires a JSON file with the following format:
     "sets": [
         {
             "include": "common-params",
+            "include-preset": "sequential-read",
             "params": [
                 { "arg": "ioengine", "vals": [ "sync" ] }
             ]
@@ -126,12 +127,13 @@ The example below is a simplified version of fio benchmark requirements file:
 ```
 
 The order of precedence for overriding params is the following:
-    1. `essentials`: always use (override params defined elsewhere).
-    2. param sets defined in the input file: apply params overriding defaults and
-       `presets`.
-    3. `presets`: override all default params with the params in the `presets`
-       array.
-    4. `defaults`: only use if not defined anywhere else.
+    1. `essentials`: always use params, override defined params.
+    2. `sets`: param sets defined in the input file override all params
+       defined elsewhere.
+    3. `global-options`: params included override `presets`.
+    4. "named" `presets`: override all `defaults` params.
+    5. `defaults`: params are use only if the set is empty (no other params
+       defined in the set).
 
 ### presets
 
@@ -146,11 +148,23 @@ The `defaults` parameters are used if no parameters are supplied in the input
 file by the user. Multiplex assumes the default value if the param is not
 present in the multi-value json file neither in the `presets` section of the
 requirements file.
+The `defaults` parameters are used if no parameters are supplied for a given
+set in the input file by the user. Multiplex assumes the default value should
+be used if the param is not present in the multi-value json file neither in
+the `presets` section of the requirements file. In other words, defaults are
+only appended to the param set, after loading presets, if the set is empty.
 
 #### essentials
 The `essentials` parameters are the minimum parameters that the test harness
 need to function properly. Theses parameters are always appended to the list of
-parameters to use to guarantee basic functionality of the harness.
+parameters to use to guarantee basic functionality of the harness. These
+params override params already defined elsewhere.
+
+#### "named" presets
+The "named" `presets` are groups of parameters that helps users to test
+multiple combinations of params. These params are used with "include-preset"
+keyword in the multi-value input file. Any param from the named presets that
+is already defined in the multi-value file will be overriden.
 
 
 ### validations

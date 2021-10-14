@@ -5,8 +5,7 @@
             { "arg": "duration", "vals": ["60"] }
         ],
         "defaults": [
-            { "arg": "rw", "vals": ["read", "randread"] },
-            { "arg": "bs", "vals": ["16K"] }
+            { "arg": "rw", "vals": ["read", "randread"] }
         ],
         "sequential-read": [
             { "arg": "rw", "vals": [ "read" ] },

@@ -11,6 +11,11 @@ class TestRequirements:
     req_presets_empty = "requirements-presets-empty-pass.json"
     req_single_escape = "requirements-single-escape-fail.json"
 
+    # helper function to load json string from file
+    def _load_json(self, filename):
+        with open("tests/JSON/" + filename, "r") as file:
+            return file.read().rstrip("\n")
+
     """Common function to load requirements"""
     @pytest.fixture(scope="function")
     def load_req(self, request):
@@ -49,7 +54,7 @@ class TestRequirements:
         param = next((item for item in multiplex.presets_dict["essentials"] if item["arg"] == "duration"), False)
         assert param["vals"] == ["60"]
         param = next((item for item in multiplex.presets_dict["defaults"] if item["arg"] == "bs"), False)
-        assert param["vals"] == ["16K"]
+        assert param == False
         param = next((item for item in multiplex.presets_dict["sequential-read"] if item["arg"] == "bs"), False)
         assert param["vals"] == ["4K"]
 
@@ -114,3 +119,15 @@ class TestRequirements:
         multiplex.validation_dict = {}
         validated = multiplex.param_validated("mtu", "1500")
         assert validated is True
+
+    """Test presets overrides (defaults and essentials)"""
+    @pytest.mark.parametrize("load_req", [ requirements_json ], indirect=True)
+    def test_override_presets(self, load_req):
+        multiplex.load_presets(load_req)
+        json1 = multiplex.load_json_file("tests/JSON/multi-params-sets.json")
+        json2 = multiplex.load_param_sets(json1)
+        json3 = multiplex.override_presets(json2)
+        processed = json.dumps(json3, indent=4, sort_keys=True,
+                                separators=(',',': '))
+        expected = self._load_json("expected-override-presets.json")
+        assert processed == expected

@@ -264,6 +264,33 @@ def load_presets(json_req):
     if "presets" in json_req:
         presets_dict.update(json_req["presets"])
 
+def override_presets(json_obj):
+    """Override params w/ presets loaded from the requirements file"""
+    for _json in json_obj:
+
+        # apply default params if empty set
+        if len(_json) == 0 and "defaults" in presets_dict:
+            _json.append(copy.deepcopy(presets_dict["defaults"]))
+
+        # append essential params, override duplicates
+        if "essentials" in presets_dict:
+            for _param in _json:
+                _ess = next((item for item in presets_dict["essentials"]
+                             if item["arg"] == _param["arg"]), False)
+                if _ess:
+                    # override param with essential
+                    idx = _json.index(_param)
+                    _json[idx] = _ess
+
+                    # delete overriden param from essentials
+                    idx = presets_dict["essentials"].index(_ess)
+                    del presets_dict["essentials"][idx]
+            # append essentials (new/undefined ones)
+            for _ess in presets_dict["essentials"]:
+                _json.append(_ess)
+
+    return json_obj
+
 def create_validation_dict(req_json):
     """Create validation dict from requirements"""
     validations = req_json["validations"]
@@ -366,7 +393,8 @@ def main():
         load_presets(json_req)
 
     combined_json = load_param_sets(input_json)
-    multiplexed_json = multiplex_sets(combined_json)
+    overriden_json = override_presets(combined_json)
+    multiplexed_json = multiplex_sets(overriden_json)
     finalized_json = convert_vals(multiplexed_json)
     dump_output(finalized_json)
 
