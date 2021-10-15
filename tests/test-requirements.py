@@ -8,6 +8,7 @@ import multiplex
 class TestRequirements:
 
     requirements_json = "requirements-pass.json"
+    req_presets_def_ess_empty = "requirements-presets-def-ess-empty.json"
     req_presets_empty = "requirements-presets-empty-pass.json"
     req_single_escape = "requirements-single-escape-fail.json"
 
@@ -130,4 +131,29 @@ class TestRequirements:
         processed = json.dumps(json3, indent=4, sort_keys=True,
                                 separators=(',',': '))
         expected = self._load_json("expected-override-presets.json")
+        assert processed == expected
+
+    """Test include named presets"""
+    @pytest.mark.parametrize("load_req", [ requirements_json ], indirect=True)
+    def test_include_preset(self, load_req):
+        multiplex.load_presets(load_req)
+        json1 = multiplex.load_json_file("tests/JSON/multi-params-sets-include-preset.json")
+        json2 = multiplex.load_param_sets(json1)
+        json3 = multiplex.override_presets(json2)
+        processed = json.dumps(json3, indent=4, sort_keys=True,
+                                separators=(',',': '))
+        expected = self._load_json("expected-include-preset.json")
+        assert processed == expected
+
+    """Test include named presets w/ empty default/essentials"""
+    @pytest.mark.parametrize("load_req", [ req_presets_def_ess_empty ], indirect=True)
+    def test_presets_def_ess_empty(self, load_req):
+        multiplex.presets_dict = {}
+        multiplex.load_presets(load_req)
+        j1 = multiplex.load_json_file("tests/JSON/multi-params-sets-include-preset.json")
+        j2 = multiplex.load_param_sets(j1)
+        j3 = multiplex.override_presets(j2)
+        processed = json.dumps(j3, indent=4, sort_keys=True,
+                                separators=(',',': '))
+        expected = self._load_json("expected-include-preset-def-ess-empty.json")
         assert processed == expected

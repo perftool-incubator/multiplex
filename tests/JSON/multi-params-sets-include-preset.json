@@ -1,0 +1,12 @@
+{
+    "global-options": [
+    ],
+    "sets": [
+        {
+            "include-preset": "sequential-read",
+            "params": [
+                { "arg": "bs", "vals": [ "1K" ] }
+            ]
+        }
+    ]
+}

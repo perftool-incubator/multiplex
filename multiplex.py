@@ -105,14 +105,33 @@ def load_param_sets(sets_block):
                 # Include params if set name matches
                 if set['include'] == global_opt['name']:
                     for global_param in global_opt['params']:
-                        if param_enabled(global_param):
+                        # only include if param is not defined in this set
+                        if (param_enabled(global_param) and not
+                            param_exists(global_param, param_set)):
                             param_set.append(copy.deepcopy(global_param))
+
+        # handle named presets params included in each set
+        if 'include-preset' in set:
+            # Go find group of params in requirements presets
+            for preset_grp in presets_dict:
+                # Include params if named-preset group is found
+                if set['include-preset'] in presets_dict:
+                    for param_preset in presets_dict[set['include-preset']]:
+                        # only include if param is not defined in this set
+                        if (param_enabled(param_preset) and not
+                            param_exists(param_preset, param_set)):
+                            param_set.append(copy.deepcopy(param_preset))
 
         # handle params in each set
         if 'params' in set:
             for param in set['params']:
                 if param_enabled(param):
-                    param_set.append(param)
+                    replace_param = param_exists(param, param_set)
+                    if replace_param:
+                        idx = param_set.index(replace_param)
+                        param_set[idx] = param
+                    else:
+                        param_set.append(param)
 
         # mv_array is the outter array containing the inner sets
         mv_array.append(param_set)
@@ -290,6 +309,10 @@ def override_presets(json_obj):
                 _json.append(_ess)
 
     return json_obj
+
+def param_exists(param, set):
+    """Check if param is already defined in the set or it is a new one"""
+    return next((item for item in set if item["arg"] == param["arg"]), False)
 
 def create_validation_dict(req_json):
     """Create validation dict from requirements"""
