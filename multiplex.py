@@ -23,6 +23,7 @@ EC_REQ_SCHEMA_FAIL=5
 validation_dict = {}
 convert_dict = {}
 transform_dict = {}
+presets_dict = {}
 
 def process_options():
     """Process arguments from command line"""
@@ -104,14 +105,33 @@ def load_param_sets(sets_block):
                 # Include params if set name matches
                 if set['include'] == global_opt['name']:
                     for global_param in global_opt['params']:
-                        if param_enabled(global_param):
+                        # only include if param is not defined in this set
+                        if (param_enabled(global_param) and not
+                            param_exists(global_param, param_set)):
                             param_set.append(copy.deepcopy(global_param))
+
+        # handle named presets params included in each set
+        if 'include-preset' in set:
+            # Go find group of params in requirements presets
+            for preset_grp in presets_dict:
+                # Include params if named-preset group is found
+                if set['include-preset'] in presets_dict:
+                    for param_preset in presets_dict[set['include-preset']]:
+                        # only include if param is not defined in this set
+                        if (param_enabled(param_preset) and not
+                            param_exists(param_preset, param_set)):
+                            param_set.append(copy.deepcopy(param_preset))
 
         # handle params in each set
         if 'params' in set:
             for param in set['params']:
                 if param_enabled(param):
-                    param_set.append(param)
+                    replace_param = param_exists(param, param_set)
+                    if replace_param:
+                        idx = param_set.index(replace_param)
+                        param_set[idx] = param
+                    else:
+                        param_set.append(param)
 
         # mv_array is the outter array containing the inner sets
         mv_array.append(param_set)
@@ -258,6 +278,42 @@ def convert_vals(obj):
 
     return new_obj
 
+def load_presets(json_req):
+    """Create a dict for presets"""
+    if "presets" in json_req:
+        presets_dict.update(json_req["presets"])
+
+def override_presets(json_obj):
+    """Override params w/ presets loaded from the requirements file"""
+    for _json in json_obj:
+
+        # apply default params if empty set
+        if len(_json) == 0 and "defaults" in presets_dict:
+            _json.append(copy.deepcopy(presets_dict["defaults"]))
+
+        # append essential params, override duplicates
+        if "essentials" in presets_dict:
+            for _param in _json:
+                _ess = next((item for item in presets_dict["essentials"]
+                             if item["arg"] == _param["arg"]), False)
+                if _ess:
+                    # override param with essential
+                    idx = _json.index(_param)
+                    _json[idx] = _ess
+
+                    # delete overriden param from essentials
+                    idx = presets_dict["essentials"].index(_ess)
+                    del presets_dict["essentials"][idx]
+            # append essentials (new/undefined ones)
+            for _ess in presets_dict["essentials"]:
+                _json.append(_ess)
+
+    return json_obj
+
+def param_exists(param, set):
+    """Check if param is already defined in the set or it is a new one"""
+    return next((item for item in set if item["arg"] == param["arg"]), False)
+
 def create_validation_dict(req_json):
     """Create validation dict from requirements"""
     validations = req_json["validations"]
@@ -357,10 +413,11 @@ def main():
         if not validate_schema(json_req, "req-schema.json"):
             return(EC_REQ_SCHEMA_FAIL)
         create_validation_dict(json_req)
+        load_presets(json_req)
 
     combined_json = load_param_sets(input_json)
-    multiplexed_json = multiplex_sets(combined_json)
-
+    overriden_json = override_presets(combined_json)
+    multiplexed_json = multiplex_sets(overriden_json)
     finalized_json = convert_vals(multiplexed_json)
     dump_output(finalized_json)
 

@@ -1,16 +1,15 @@
 {
     "presets": {
         "essentials": [
-            { "arg": "write_iops_log", "vals": ["fio"] },
-            { "arg": "write_lat_log", "vals": ["fio"] }
+            { "arg": "bs", "vals": ["1K"] },
+            { "arg": "duration", "vals": ["60"] }
         ],
         "defaults": [
-            { "arg": "rw", "vals": ["read", "randread"] },
-            { "arg": "bs", "vals": ["16k"] }
+            { "arg": "rw", "vals": ["read", "randread"] }
         ],
         "sequential-read": [
             { "arg": "rw", "vals": [ "read" ] },
-            { "arg": "bs", "vals": [ "4k" ] }
+            { "arg": "bs", "vals": [ "4K" ] }
         ]
     },
     "validations": {
@@ -33,6 +32,16 @@
             "description": "all possible testtypes",
             "args": [ "rw" ],
             "vals": "^(|rand)(read|write|trim)$|^readwrite$|^randrw$|^trimwrite$"
+        },
+        "ioengine": {
+            "description": "all possible ioengine types",
+            "args": [ "ioengine" ],
+            "vals": "^sync$|^libaio$"
+        },
+        "duration": {
+            "description": "duration",
+            "args": [ "duration" ],
+            "vals": "^([1-9][0-9]*)+[smh]?"
         }
     },
     "units": {

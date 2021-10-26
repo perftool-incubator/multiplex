@@ -44,6 +44,10 @@
                         "type": "string",
                         "minLength": 1
                     },
+                    "include-preset": {
+                        "type": "string",
+                        "minLength": 1
+                    },
                     "params": {
                         "type": "array",
                         "uniqueItems": true,

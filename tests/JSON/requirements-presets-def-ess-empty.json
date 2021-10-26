@@ -1,0 +1,12 @@
+{
+    "presets": {
+        "sequential-read": [
+            { "arg": "rw", "vals": [ "read" ] },
+            { "arg": "bs", "vals": [ "4K" ] }
+        ]
+    },
+    "validations": {
+    },
+    "units": {
+    }
+}
