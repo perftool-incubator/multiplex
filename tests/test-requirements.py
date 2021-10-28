@@ -12,10 +12,21 @@ class TestRequirements:
     req_presets_empty = "requirements-presets-empty-pass.json"
     req_single_escape = "requirements-single-escape-fail.json"
 
+    json_missing_sets_and_globals = "missing-params-sets-and-global.json"
+    json_missing_sets_empty_globals = "missing-params-sets-empty-global.json"
+    json_empty_sets_and_globals = "empty-params-sets-and-global.json"
+    json_empty_sets_missing_globals = "empty-params-sets-missing-global.json"
+
     # helper function to load json string from file
     def _load_json(self, filename):
         with open("tests/JSON/" + filename, "r") as file:
             return file.read().rstrip("\n")
+
+    """Common function to load json"""
+    @pytest.fixture(scope="function")
+    def load_json(self, request):
+        load_json = multiplex.load_json_file("tests/JSON/"+ request.param)
+        return load_json
 
     """Common function to load requirements"""
     @pytest.fixture(scope="function")
@@ -156,4 +167,31 @@ class TestRequirements:
         processed = json.dumps(j3, indent=4, sort_keys=True,
                                 separators=(',',': '))
         expected = self._load_json("expected-include-preset-def-ess-empty.json")
+        assert processed == expected
+
+    """Test missing/empty set and global, no presets"""
+    @pytest.mark.parametrize("load_json", [ json_missing_sets_and_globals,
+                json_missing_sets_empty_globals, json_empty_sets_and_globals,
+                json_empty_sets_missing_globals ], indirect=True)
+    def test_missing_params_no_presets(self, load_json, caplog):
+        json_req = self._load_json("multi-params-sets-include-preset.json")
+        multiplex.load_presets(json_req)
+        json1 = multiplex.load_param_sets(load_json)
+        json2 = multiplex.override_presets(json1)
+        assert "An empty param set has been found" in caplog.text
+        assert json2 == None
+
+    """Test missing/empty set and global, w/ defaults/essentials presets"""
+    @pytest.mark.parametrize("load_json", [ json_missing_sets_and_globals,
+                json_missing_sets_empty_globals, json_empty_sets_and_globals,
+                json_empty_sets_missing_globals ], indirect=True)
+    def test_missing_params_override_presets(self, load_json):
+        multiplex.presets_dict = {}
+        json_req = multiplex.load_json_file("tests/JSON/requirements-pass.json")
+        multiplex.load_presets(json_req)
+        json1 = multiplex.load_param_sets(load_json)
+        json2 = multiplex.override_presets(json1)
+        processed = json.dumps(json2, indent=4, sort_keys=True,
+                                separators=(',',': '))
+        expected = self._load_json("expected-presets-override-missing-params.json")
         assert processed == expected
