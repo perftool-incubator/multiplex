@@ -312,7 +312,18 @@ def override_presets(json_obj):
 
 def param_exists(param, set):
     """Check if param is already defined in the set or it is a new one"""
-    return next((item for item in set if item["arg"] == param["arg"]), False)
+
+    if "role" not in param:
+        param["role"] = "client"
+
+    for p in set:
+        if param["arg"] == p["arg"]:
+            if "role" not in p:
+                p["role"] = "client"
+            if param["role"] == p["role"]:
+                return p
+
+    return False
 
 def create_validation_dict(req_json):
     """Create validation dict from requirements"""
