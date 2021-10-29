@@ -94,3 +94,16 @@ class TestJSON:
             for set in sets:
                 assert 'vals' not in set
                 assert 'val' in set
+
+    """Test if dup params with different roles are not overrriden"""
+    @pytest.mark.parametrize("load_json_file", [ "dup-param-diff-role.json" ],
+                             indirect=True)
+    def test_dup_param_diff_role(self, load_json_file):
+        combined_json = multiplex.load_param_sets(load_json_file)
+        multiplexed_json = multiplex.multiplex_sets(combined_json)
+        finalized_json = multiplex.convert_vals(multiplexed_json)
+        processed_json = json.dumps(finalized_json, sort_keys=True, indent=4,
+                                    separators=(',',': '))
+        expected_json = self._load_json("expected-dup-param-diff-role.json")
+
+        assert processed_json == expected_json

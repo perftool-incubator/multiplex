@@ -1,0 +1,19 @@
+{
+    "global-options": [
+        {
+            "name": "common-params",
+            "params": [
+                { "arg": "p1", "vals": [ "v1", "v2" ] }
+            ]
+        }
+    ],
+    "sets": [
+        {
+            "include": "common-params",
+            "params": [
+                { "arg": "p1", "vals": [ "v1s" ], "role": "server" }
+            ]
+        }
+    ]
+}
+

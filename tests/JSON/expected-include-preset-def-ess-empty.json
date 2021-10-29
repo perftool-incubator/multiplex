@@ -2,12 +2,14 @@
     [
         {
             "arg": "rw",
+            "role": "client",
             "vals": [
                 "read"
             ]
         },
         {
             "arg": "bs",
+            "role": "client",
             "vals": [
                 "1K"
             ]

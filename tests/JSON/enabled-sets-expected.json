@@ -2,6 +2,7 @@
     [
         {
             "arg": "rw",
+            "role": "client",
             "vals": [
                 "read",
                 "write"

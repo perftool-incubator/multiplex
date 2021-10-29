@@ -2,6 +2,7 @@
     [
         {
             "arg": "rw",
+            "role": "client",
             "vals": [
                 "read",
                 "write"
@@ -9,6 +10,7 @@
         },
         {
             "arg": "ioengine",
+            "role": "client",
             "vals": [
                 "sync"
             ]
@@ -29,6 +31,7 @@
     [
         {
             "arg": "rw",
+            "role": "client",
             "vals": [
                 "read",
                 "write"

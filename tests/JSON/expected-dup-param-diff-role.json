@@ -1,0 +1,26 @@
+[
+    [
+        {
+            "arg": "p1",
+            "role": "client",
+            "val": "v1"
+        },
+        {
+            "arg": "p1",
+            "role": "server",
+            "val": "v1s"
+        }
+    ],
+    [
+        {
+            "arg": "p1",
+            "role": "client",
+            "val": "v2"
+        },
+        {
+            "arg": "p1",
+            "role": "server",
+            "val": "v1s"
+        }
+    ]
+]
