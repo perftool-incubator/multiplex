@@ -119,6 +119,22 @@ class TestRequirements:
         multiplex.validation_dict = val_dict
         assert validate_param is True
 
+    """Test invalid vals array"""
+    @pytest.mark.parametrize("validate_param", [ "0023", "abc" ], indirect=True)
+    @pytest.mark.parametrize("val_dict", [ { "param2": ["^[1-9]+[0-9]*$", "^[A-Z]*$"] } ])
+    def test_invalid_val_array(self, validate_param, val_dict):
+        multiplex.validation_dict = {}
+        multiplex.validation_dict = val_dict
+        assert validate_param is False
+
+    """Test valid vals array"""
+    @pytest.mark.parametrize("validate_param", [ "60", "ABC" ], indirect=True)
+    @pytest.mark.parametrize("val_dict", [ { "param1": ["^[1-9]+[0-9]*$", "^[A-Z]*$"] } ])
+    def test_valid_val_array(self, validate_param, val_dict):
+        multiplex.validation_dict = {}
+        multiplex.validation_dict = val_dict
+        assert validate_param is True
+
     """Test missing validation (there is no validation for mtu param)"""
     def test_missing_validations(self, caplog):
         multiplex.validation_dict = { "frame-size": "^(([1-9][0-9]*\\.?[0-9]*)|(0?\\.[0-9]+)).*[BKMG]?" }
