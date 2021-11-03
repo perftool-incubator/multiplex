@@ -33,7 +33,7 @@
         },
         "sets": {
             "type": "array",
-            "minItems": 1,
+            "minItems": 0,
             "uniqueItems": true,
             "items": {
                 "type": "object",
@@ -60,10 +60,6 @@
             }
         }
     },
-    "required": [
-        "global-options",
-        "sets"
-    ],
     "additionalProperties": false,
     "definitions": {
         "mv_param": {

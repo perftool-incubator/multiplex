@@ -19,6 +19,7 @@ EC_JSON_FAIL=2
 EC_REQUIREMENTS_FAIL=3
 EC_VALIDATIONS_FAIL=4
 EC_REQ_SCHEMA_FAIL=5
+EC_EMPTY_SET_FAIL=6
 
 validation_dict = {}
 convert_dict = {}
@@ -94,6 +95,9 @@ def load_param_sets(sets_block):
     """Load params from sets block"""
     # mv_array (multi-value) is an array of param set arrays
     mv_array = []
+
+    if len(sets_block) == 0 or "sets" not in sets_block:
+        return mv_array
 
     for set in sets_block['sets']:
         param_set = []
@@ -285,12 +289,18 @@ def load_presets(json_req):
 
 def override_presets(json_obj):
     """Override params w/ presets loaded from the requirements file"""
+
+    if len(json_obj) == 0:
+        json_obj = [[]]
+
     for _json in json_obj:
-
         # apply default params if empty set
-        if len(_json) == 0 and "defaults" in presets_dict:
-            _json.append(copy.deepcopy(presets_dict["defaults"]))
+        if "defaults" in presets_dict:
+            if len(_json) == 0:
+                idx = json_obj.index(_json)
+                json_obj[idx] = copy.deepcopy(presets_dict["defaults"])
 
+    for _json in json_obj:
         # append essential params, override duplicates
         if "essentials" in presets_dict:
             for _param in _json:
@@ -304,9 +314,22 @@ def override_presets(json_obj):
                     # delete overriden param from essentials
                     idx = presets_dict["essentials"].index(_ess)
                     del presets_dict["essentials"][idx]
-            # append essentials (new/undefined ones)
-            for _ess in presets_dict["essentials"]:
-                _json.append(_ess)
+
+            if len(_json) > 0:
+                # append essentials (new/undefined ones)
+                for _ess in presets_dict["essentials"]:
+                    _json.append(_ess)
+            else:
+                idx = json_obj.index(_json)
+                json_obj[idx] = copy.deepcopy(presets_dict["essentials"])
+
+    # If after the overrides, we find an empty set, we cannot continue.
+    for _json in json_obj:
+        if _json == [] or len(_json) == 0:
+            log.error("An empty param set has been found."
+                      " Define preset params (essentials and/or defaults)"
+                      " in the requirements file for minimum required params.")
+            return None
 
     return json_obj
 
@@ -413,21 +436,25 @@ def main():
     input_json = load_json_file(args.input)
 
     if input_json is None:
-        return(EC_JSON_FAIL)
+        return EC_JSON_FAIL
     if not validate_schema(input_json, "schema.json"):
-        return(EC_SCHEMA_FAIL)
+        return EC_SCHEMA_FAIL
 
     if args.req is not None:
         json_req = load_json_file(args.req)
         if json_req is None:
-            return(EC_REQUIREMENTS_FAIL)
+            return EC_REQUIREMENTS_FAIL
         if not validate_schema(json_req, "req-schema.json"):
-            return(EC_REQ_SCHEMA_FAIL)
+            return EC_REQ_SCHEMA_FAIL
         create_validation_dict(json_req)
         load_presets(json_req)
 
     combined_json = load_param_sets(input_json)
+
     overriden_json = override_presets(combined_json)
+    if overriden_json == None:
+        return EC_EMPTY_SET_FAIL
+
     multiplexed_json = multiplex_sets(overriden_json)
     finalized_json = convert_vals(multiplexed_json)
     dump_output(finalized_json)
