@@ -348,14 +348,25 @@ def override_presets(json_obj):
 def param_exists(param, set):
     """Check if param is already defined in the set or it is a new one"""
 
-    if "role" not in param:
-        param["role"] = "client"
+    param_role = "client"
+    param_id = "1"
+
+    if "role" in param:
+        param_role = param["role"]
+    if "id" in param:
+        param_id = param["id"]
 
     for p in set:
         if param["arg"] == p["arg"]:
-            if "role" not in p:
-                p["role"] = "client"
-            if param["role"] == p["role"]:
+            if "role" in p:
+                p_role = p["role"]
+            else:
+                p_role = "client"
+            if "id" in p:
+                p_id = p["id"]
+            else:
+                p_id = "1"
+            if param_role == p_role and param_id == p_id:
                 return p
 
     return False
