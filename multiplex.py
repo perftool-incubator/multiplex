@@ -78,18 +78,30 @@ def param_enabled(param_obj):
 
 def param_validated(param, val):
     """Return True if matches validation pattern, False otherwise"""
+
+    # if validation dict is empty, no requirements are in place, then pass
+    if len(validation_dict) == 0:
+        return True
+
+    valid = False
     if param in validation_dict:
-        pattern = validation_dict[param]
-        if re.match(rf'{pattern}', val) is None:
-            log.error("Validation failed for param='%s', "
-                      "val='%s'. Values must match the pattern '%s'."
-                      % (param, val, pattern))
-            return False
+        pattern_array = validation_dict[param]
+
+        # backwards compatibility (validation regex as str, not an array)
+        if isinstance(pattern_array, str):
+            pattern_array = [pattern_array]
+
+        for pattern in pattern_array:
+            if re.match(rf'{pattern}', val) is None:
+                log.warning("Validation failed for param='%s', "
+                            "val='%s'. Values didn't match the pattern '%s'."
+                            % (param, val, pattern))
+            else:
+                valid = True
     elif bool(validation_dict):
         log.error("Validation for param='%s' not found in the "
                   "requirements file." % param)
-        return False
-    return True
+    return valid
 
 def load_param_sets(sets_block):
     """Load params from sets block"""
