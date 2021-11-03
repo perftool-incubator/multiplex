@@ -1,0 +1,20 @@
+{
+    "global-options": [
+        {
+            "name": "common-params",
+            "params": [
+                { "arg": "rw", "vals": [ "read" ] }
+            ]
+        }
+    ],
+    "sets": [
+        {
+            "include": "common-params",
+            "params": [
+                { "arg": "bs", "vals": [ "64" ], "id": "1" },
+                { "arg": "bs", "vals": [ "512", "1K" ], "id": "2" }
+            ]
+        }
+    ]
+}
+
