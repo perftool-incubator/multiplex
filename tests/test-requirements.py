@@ -211,3 +211,22 @@ class TestRequirements:
                                 separators=(',',': '))
         expected = self._load_json("expected-presets-override-missing-params.json")
         assert processed == expected
+
+    """Test (single) val convert K-to-None"""
+    def test_convert_single(self):
+        multiplex.convert_dict = { "size": { "": { "": "1", "B": "1", "K": "1024", "M": "1024*1024", "G": "1024*1024*1024" } } }
+        transformed = multiplex.transform_param_val("size", "16K")
+        assert transformed == "16384"
+
+    """Test val range convert None-to-None"""
+    def test_convert_range(self):
+        multiplex.convert_dict = { "size": { "": { "": "1", "B": "1", "K": "1024", "M": "1024*1024", "G": "1024*1024*1024" } } }
+        transformed = multiplex.transform_param_val("size", "1024-2048")
+        assert transformed == "1024-2048"
+
+    """Test val range convert None-to-K, KiB"""
+    def test_convert_range_K(self):
+        multiplex.convert_dict = { "size": { "K": { "": "1/1024", "B": "1/1024", "K": "1", "M": "1024", "G": "1024*1024" } } }
+        multiplex.transform_dict = { "size": { "search": "K", "replace": "kiB" } }
+        transformed = multiplex.transform_param_val("size", "1024-2048")
+        assert transformed == "1kiB-2kiB"
