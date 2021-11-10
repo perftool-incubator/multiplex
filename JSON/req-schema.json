@@ -109,8 +109,7 @@
                     "minLength": 1
                 },
                 "convert": {
-                    "type": "string",
-                    "minLength": 1
+                    "type": "string"
                 },
                 "transform": {
                     "type": "object",
