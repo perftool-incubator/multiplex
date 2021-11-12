@@ -114,6 +114,11 @@ def load_param_sets(sets_block):
     for set in sets_block['sets']:
         param_set = []
 
+        if 'enabled' in set:
+            # ignore this set if enabled=no
+            if set['enabled'] == 'no':
+                continue
+
         # handle global params included in each set
         if 'include' in set:
             include_set = set['include']
@@ -160,7 +165,8 @@ def load_param_sets(sets_block):
     return mv_array
 
 def sanitize_set(obj):
-    """Update set with roles and remove disabled params"""
+    """Update set with roles and remove disabled params or entire set"""
+
     for set_idx in range(0, len(obj)):
 
         # remove param from the set obj if not enabled

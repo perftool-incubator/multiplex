@@ -67,6 +67,10 @@
                         "items": {
                             "$ref": "#/definitions/mv_param"
                         }
+                    },
+                    "enabled": {
+                        "type": "string",
+                        "enum": ["yes", "no"]
                     }
                 },
                 "additionalProperties": false
