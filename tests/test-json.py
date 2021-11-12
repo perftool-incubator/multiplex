@@ -141,4 +141,35 @@ class TestJSON:
 
         assert processed_json == expected_json
 
+    """Test if load_param_sets handles enabled=yes set"""
+    @pytest.mark.parametrize("load_json_file", [ "multi-params-sets-enabled.json" ],
+                             indirect=True)
+    def test_multi_params_sets_enabled(self, load_json_file):
+        combined_json = multiplex.load_param_sets(load_json_file)
+        processed_json = json.dumps(combined_json, sort_keys=True, indent=4,
+                                    separators=(',',': '))
+        expected_json = self._load_json("multi-sets-expected.json")
 
+        assert processed_json == expected_json
+
+    """Test if load_param_sets handles enabled=no set"""
+    @pytest.mark.parametrize("load_json_file", [ "multi-params-sets-disabled.json" ],
+                             indirect=True)
+    def test_multi_params_sets_disabled(self, load_json_file):
+        combined_json = multiplex.load_param_sets(load_json_file)
+        processed_json = json.dumps(combined_json, sort_keys=True, indent=4,
+                                    separators=(',',': '))
+        expected_json = self._load_json("multi-sets-expected-disabled.json")
+
+        assert processed_json == expected_json
+
+    """Test if load_param_sets handles multiple sets of params"""
+    @pytest.mark.parametrize("load_json_file", [ "multi-params-sets.json" ],
+                             indirect=True)
+    def test_multi_params_sets(self, load_json_file):
+        combined_json = multiplex.load_param_sets(load_json_file)
+        processed_json = json.dumps(combined_json, sort_keys=True, indent=4,
+                                    separators=(',',': '))
+        expected_json = self._load_json("multi-sets-expected.json")
+
+        assert processed_json == expected_json
