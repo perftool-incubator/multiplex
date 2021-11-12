@@ -1,0 +1,23 @@
+[
+    [
+        {
+            "arg": "rw",
+            "vals": [
+                "read"
+            ]
+        },
+        {
+            "arg": "bs",
+            "vals": [
+                "512"
+            ]
+        },
+        {
+            "arg": "ioengine",
+            "vals": [
+                "sync"
+            ]
+        }
+    ]
+]
+

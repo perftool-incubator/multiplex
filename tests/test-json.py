@@ -118,3 +118,27 @@ class TestJSON:
         expected_json = self._load_json("expected-dup-param-diff-role.json")
 
         assert processed_json == expected_json
+
+    """Test if load_param_sets loads multiple sets from global params"""
+    @pytest.mark.parametrize("load_json_file",
+                             [ "include-global-multi.json" ], indirect=True)
+    def test_multi_global_params(self, load_json_file):
+        combined_json = multiplex.load_param_sets(load_json_file)
+        processed_json = json.dumps(combined_json, sort_keys=True, indent=4,
+                                    separators=(',',': '))
+        expected_json = self._load_json("include-global-multi-expected.json")
+
+        assert processed_json == expected_json
+
+    """Test if load_param_sets loads single set from global params"""
+    @pytest.mark.parametrize("load_json_file",
+                             [ "include-global-single.json" ], indirect=True)
+    def test_single_global_params(self, load_json_file):
+        combined_json = multiplex.load_param_sets(load_json_file)
+        processed_json = json.dumps(combined_json, sort_keys=True, indent=4,
+                                    separators=(',',': '))
+        expected_json = self._load_json("include-global-single-expected.json")
+
+        assert processed_json == expected_json
+
+

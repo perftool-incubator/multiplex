@@ -116,15 +116,20 @@ def load_param_sets(sets_block):
 
         # handle global params included in each set
         if 'include' in set:
-            # Go find set of params in global options block
-            for global_opt in sets_block['global-options']:
-                # Include params if set name matches
-                if set['include'] == global_opt['name']:
-                    for global_param in global_opt['params']:
-                        # only include if param is not defined in this set
-                        if (param_enabled(global_param) and not
-                            param_exists(global_param, param_set)):
-                            param_set.append(copy.deepcopy(global_param))
+            include_set = set['include']
+            # include may be a string or array, normalize it to array
+            if isinstance(include_set, str):
+                include_set = [ include_set ]
+            for inc in include_set:
+                # Go find set of params in global options block
+                for global_opt in sets_block['global-options']:
+                    # Include params if set name matches
+                    if inc == global_opt['name']:
+                        for global_param in global_opt['params']:
+                            # only include if param is not defined in this set
+                            if (param_enabled(global_param) and not
+                                param_exists(global_param, param_set)):
+                                param_set.append(copy.deepcopy(global_param))
 
         # handle named presets params included in each set
         if 'include-preset' in set:
