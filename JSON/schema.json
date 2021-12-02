@@ -4,6 +4,17 @@
 
     "type": "object",
     "properties": {
+        "schema": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "string",
+                    "enum": [
+                        "2021.12.02"
+                    ]
+                }
+            }
+        },
         "global-options": {
             "type": "array",
             "minItems": 0,

@@ -1,0 +1,21 @@
+{
+    "schema": {
+        "version": "2021.12.02"
+    },
+    "global-options": [
+        {
+            "name": "common-params",
+            "params": [
+                { "arg": "rw", "vals": [ "read" ] }
+            ]
+        }
+    ],
+    "sets": [
+        {
+            "include": "common-params",
+            "params": [
+                { "arg": "ioengine", "vals": [ "sync" ] }
+            ]
+        }
+    ]
+}
