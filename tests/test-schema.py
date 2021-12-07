@@ -18,3 +18,13 @@ class TestSchema:
     def test_validate_schema_good(self, load_json_file):
         rt = multiplex.validate_schema(load_json_file, "schema.json")
         assert rt == True
+
+    @pytest.mark.parametrize("load_json_file", [ "schema-version-good.json" ], indirect=True)
+    def test_validate_schema_version_good(self, load_json_file):
+        rt = multiplex.validate_schema(load_json_file, "schema.json")
+        assert rt == True
+
+    @pytest.mark.parametrize("load_json_file", [ "schema-version-bad.json" ], indirect=True)
+    def test_validate_schema_version_bad(self, load_json_file):
+        rt = multiplex.validate_schema(load_json_file, "schema.json")
+        assert rt == False
