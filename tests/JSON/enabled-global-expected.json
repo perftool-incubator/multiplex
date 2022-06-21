@@ -2,6 +2,7 @@
     [
         {
             "arg": "ioengine",
+            "enabled": "yes",
             "vals": [
                 "sync"
             ]

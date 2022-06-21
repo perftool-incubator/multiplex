@@ -73,7 +73,6 @@ def param_enabled(param_obj):
     if "enabled" in param_obj:
         if param_obj['enabled'].lower() == "no":
             enabled=False
-        del param_obj["enabled"]
     return enabled
 
 def param_validated(param, val):
@@ -134,7 +133,10 @@ def load_param_sets(sets_block):
                             # only include if param is not defined in this set
                             if (param_enabled(global_param) and not
                                 param_exists(global_param, param_set)):
-                                param_set.append(copy.deepcopy(global_param))
+                                gp = copy.deepcopy(global_param)
+                                if 'enabled' in gp:
+                                    del gp["enabled"]
+                                param_set.append(gp)
 
         # handle named presets params included in each set
         if 'include-preset' in set:
@@ -146,7 +148,10 @@ def load_param_sets(sets_block):
                         # only include if param is not defined in this set
                         if (param_enabled(param_preset) and not
                             param_exists(param_preset, param_set)):
-                            param_set.append(copy.deepcopy(param_preset))
+                            pp = copy.deepcopy(param_preset)
+                            if 'enabled' in pp:
+                                del pp["enabled"]
+                            param_set.append(pp)
 
         # handle params in each set
         if 'params' in set:
