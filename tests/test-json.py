@@ -28,7 +28,18 @@ class TestJSON:
 
         assert processed_json == expected_json
 
-    """Test if load_param_sets removes disabled params from global params"""
+    """Test if load_param_sets removes disabled params from global a 2nd time"""
+    @pytest.mark.parametrize("load_json_file",
+                             [ "disabled-params-global-2nd.json" ], indirect=True)
+    def test_disabled_global_params_2nd(self, load_json_file):
+        combined_json = multiplex.load_param_sets(load_json_file)
+        processed_json = json.dumps(combined_json, sort_keys=True, indent=4,
+                                    separators=(',',': '))
+        expected_json = self._load_json("enabled-global-expected-2nd.json")
+
+        assert processed_json == expected_json
+
+    """Test if load_param_sets removes disabled params from params sets"""
     @pytest.mark.parametrize("load_json_file",
                              [ "disabled-params-sets.json" ], indirect=True)
     def test_disabled_sets_params(self, load_json_file):
@@ -38,6 +49,7 @@ class TestJSON:
         expected_json = self._load_json("enabled-sets-expected.json")
 
         assert processed_json == expected_json
+
 
     """Test if multiplex_sets transforms multi-value sets into multiplexed
        single value ones"""

@@ -73,6 +73,7 @@ def param_enabled(param_obj):
     if "enabled" in param_obj:
         if param_obj['enabled'].lower() == "no":
             enabled=False
+        del param_obj["enabled"]
     return enabled
 
 def param_validated(param, val):
@@ -113,10 +114,9 @@ def load_param_sets(sets_block):
     for set in sets_block['sets']:
         param_set = []
 
-        if 'enabled' in set:
+        if not param_enabled(set):
             # ignore this set if enabled=no
-            if set['enabled'] == 'no':
-                continue
+            continue
 
         # handle global params included in each set
         if 'include' in set:
@@ -131,11 +131,9 @@ def load_param_sets(sets_block):
                     if inc == global_opt['name']:
                         for global_param in global_opt['params']:
                             # only include if param is not defined in this set
-                            if (param_enabled(global_param) and not
-                                param_exists(global_param, param_set)):
-                                gp = copy.deepcopy(global_param)
-                                if 'enabled' in gp:
-                                    del gp["enabled"]
+                            gp = copy.deepcopy(global_param)
+                            if (param_enabled(gp) and not
+                                param_exists(gp, param_set)):
                                 param_set.append(gp)
 
         # handle named presets params included in each set
@@ -146,11 +144,9 @@ def load_param_sets(sets_block):
                 if set['include-preset'] in presets_dict:
                     for param_preset in presets_dict[set['include-preset']]:
                         # only include if param is not defined in this set
-                        if (param_enabled(param_preset) and not
-                            param_exists(param_preset, param_set)):
-                            pp = copy.deepcopy(param_preset)
-                            if 'enabled' in pp:
-                                del pp["enabled"]
+                        pp = copy.deepcopy(param_preset)
+                        if (param_enabled(pp) and not
+                            param_exists(pp, param_set)):
                             param_set.append(pp)
 
         # handle params in each set
