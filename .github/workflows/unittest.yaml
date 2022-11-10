@@ -1,6 +1,10 @@
 # Basic ci workflow using github actions
 name: unittest
 
+concurrency:
+  group: ${{ github.ref }}/unittest
+  cancel-in-progress: true
+
 # Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
