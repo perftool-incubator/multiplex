@@ -1,4 +1,4 @@
-name: faux-crucible-ci
+name: faux-unittest
 
 on:
   pull_request:
@@ -11,5 +11,7 @@ on:
     - 'docs/**'
 
 jobs:
-  call-core-crucible-ci:
-    uses: perftool-incubator/crucible-ci/.github/workflows/faux-core-crucible-ci.yaml@main
+  multiplex-unittests:
+    runs-on: ubuntu-latest
+    steps:
+    - run: 'echo "No build required" '
