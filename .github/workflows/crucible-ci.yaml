@@ -19,5 +19,6 @@ jobs:
       ci_target: "multiplex"
       ci_target_branch: "${{ github.ref }}"
       github_workspace: "$GITHUB_WORKSPACE"
+      userenv_filter: "minimal"
     secrets:
       registry_auth: ${{ secrets.CRUCIBLE_CI_ENGINES_REGISTRY_AUTH }}
