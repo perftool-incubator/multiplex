@@ -8,8 +8,10 @@ When running a benchmark, it is often desirable to run it multiple ways, changin
 
 ## Usage
 ```
-./multiplex.py [--requirements JSON/requirements.json] --input JSON/mv-params-input.json [--output /path/to/bench-params.json]
+./multiplex.py [--requirements JSON/requirements.json] --input JSON/mv-params-input.json [--output /path/to/bench-params.json] [--debug]
 ```
+
+Default CLI arguments can be placed in a `params` file in the same directory, one argument per line (read via argparse `fromfile_prefix_chars`).
 
 ## Input multi-value JSON
 Multiplex requires a JSON file with the following format:
@@ -274,3 +276,14 @@ parameters to STDOUT. A sample is available in `JSON/bench-params-output.json`:
 This JSON can then optionally be modified by the user, and then provided
 (typically as "bench-params.json") to a benchmark orchestrator like
 rickshaw-run.
+
+## Exit codes
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | Input JSON schema validation failed |
+| 2 | JSON file loading failed |
+| 3 | Requirements file loading failed |
+| 4 | Parameter validation failed |
+| 5 | Requirements JSON schema validation failed |
+| 6 | Empty param set after preset override (missing essentials/defaults) |
