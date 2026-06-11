@@ -1,13 +1,17 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "https://raw.githubusercontent.com/perftool-incubator/multiplex/master/schema.json",
+    "title": "Multiplex Input Schema",
+    "description": "Schema for multivariate parameter input files (mv-params).  Defines global-options (reusable named parameter groups) and sets (test configurations that reference global-options and add their own parameters).  Each set is independently expanded via Cartesian product to generate the iteration matrix.",
 
     "type": "object",
     "properties": {
         "schema": {
+            "description": "Schema version information.",
             "type": "object",
             "properties": {
                 "version": {
+                    "description": "The schema version this file conforms to.",
                     "type": "string",
                     "enum": [
                         "2021.12.02"
@@ -16,17 +20,21 @@
             }
         },
         "global-options": {
+            "description": "An array of named parameter groups that can be referenced by sets via the 'include' field.  Global-options provide reusable parameter definitions to avoid duplication across sets.",
             "type": "array",
             "minItems": 0,
             "uniqueItems": true,
             "items": {
+                "description": "A named parameter group containing one or more multivariate parameters.",
                 "type": "object",
                 "properties": {
                     "name": {
+                        "description": "The name of this parameter group, used by sets in their 'include' field to reference these parameters.",
                         "type": "string",
                         "minLength": 1
                     },
                     "params": {
+                        "description": "An array of multivariate parameters belonging to this named group.",
                         "type": "array",
                         "minItems": 1,
                         "uniqueItems": true,
@@ -43,36 +51,44 @@
             }
         },
         "sets": {
+            "description": "An array of parameter sets, each defining a test configuration.  Each set can include parameters from global-options and define its own parameters.  Sets are independently expanded via Cartesian product.",
             "type": "array",
             "minItems": 0,
             "uniqueItems": true,
             "items": {
+                "description": "A parameter set that defines one test configuration.  Parameters inherited via 'include' are combined with the set's own parameters before Cartesian expansion.",
                 "type": "object",
                 "minItems": 1,
                 "uniqeueItems": true,
                 "properties": {
                     "include": {
+                        "description": "References to global-options groups whose parameters should be inherited by this set.  Can be a single group name or an array of group names.",
                         "anyOf": [
                             {
+                                "description": "An array of global-options group names to include.",
                                 "type": "array",
                                 "minItems": 1,
                                 "uniqueItems": true,
                                 "items": {
+                                    "description": "A global-options group name.",
                                     "type": "string",
                                     "minLength": 1
                                     }
                             },
                             {
+                                "description": "A single global-options group name to include.",
                                 "type": "string",
                                 "minLength": 1
                             }
                         ]
                     },
                     "include-preset": {
+                        "description": "The name of a preset from the requirements file to include in this set.  Presets provide default parameter values defined by the benchmark.",
                         "type": "string",
                         "minLength": 1
                     },
                     "params": {
+                        "description": "An array of multivariate parameters specific to this set, combined with any included global-options parameters.",
                         "type": "array",
                         "uniqueItems": true,
                         "items": {
@@ -80,6 +96,7 @@
                         }
                     },
                     "enabled": {
+                        "description": "Controls whether this set is included in the expansion.  Defaults to 'yes' if not specified.",
                         "type": "string",
                         "enum": ["yes", "no"]
                     }
@@ -91,38 +108,47 @@
     "additionalProperties": false,
     "definitions": {
         "mv_param": {
+            "description": "A multivariate parameter definition with an argument name and one or more values.  Multiple values in 'vals' create iterations via Cartesian product with other multi-valued parameters.",
             "type": "object",
             "properties": {
                 "arg": {
+                    "description": "The parameter argument name, passed as --arg to the benchmark engine.",
                     "type": "string",
                     "minLength": 1
                 },
                 "vals": {
+                    "description": "An array of values for this parameter.  Multiple values multiply with other multi-valued parameters to create the iteration matrix.",
                     "type": "array",
                     "minItems": 1,
                     "uniqueItems": true,
                     "items": {
+                        "description": "A parameter value.",
                         "type": "string",
                         "minLength": 1
                     }
                 },
                 "role": {
+                    "description": "The engine role this parameter applies to.  'client' and 'server' restrict the parameter to that role, while 'all' (default) applies it to every engine.",
                     "type": "string",
                     "enum": ["client", "server", "all"]
                 },
                 "id": {
+                    "description": "An optional numeric identifier for this parameter, used for tracking across the expansion pipeline.",
                     "type": "string",
                     "pattern": "^[1-9][0-9]*$"
                 },
                 "ids": {
+                    "description": "An optional array of engine ID ranges that this parameter applies to, restricting it to specific engines.",
                     "type": "array",
                     "minItems": 1,
                     "items": {
+                        "description": "An engine ID or ID range (e.g., '1', '1-4').",
                         "type": "string",
                         "pattern": "^[1-9][0-9]*(-[1-9][0-9]*)?$"
                     }
                 },
                 "enabled": {
+                    "description": "Controls whether this parameter is included in the expansion.  Defaults to 'yes' if not specified.",
                     "type": "string",
                     "enum": ["yes", "no"]
                 }
