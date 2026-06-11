@@ -1,13 +1,17 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "https://raw.githubusercontent.com/perftool-incubator/multiplex/master/req-schema.json",
+    "title": "Multiplex Requirements Schema",
+    "description": "Schema for multiplex requirements files (multiplex.json) that define parameter presets, validation rules, and unit conversions for a benchmark.  Requirements files constrain and enrich the parameter expansion process.",
 
     "type": "object",
     "properties": {
         "presets": {
+            "description": "A dictionary of named parameter presets.  Each preset is an array of parameter definitions that can be referenced by sets via 'include-preset'.  Special preset names 'defaults' and 'essentials' are applied automatically.",
             "type": "object",
             "patternProperties": {
                 "[a-zA-Z0-9_-]*$": {
+                    "description": "An array of parameter definitions belonging to this named preset.",
                     "type": "array",
                     "minItems": 1,
                     "uniqueItems": true,
@@ -19,6 +23,7 @@
             "additionalProperties": false
         },
         "validations": {
+            "description": "A dictionary of validation rules that constrain parameter values.  Each validation specifies which arguments it applies to and what values or patterns are acceptable.",
             "type": "object",
             "patternProperties": {
                 "[A-Za-z0-9_-]*$": {
@@ -28,6 +33,7 @@
             "additionalProperties": false
         },
         "units": {
+            "description": "A dictionary of unit conversion definitions.  Each entry maps a parameter to its unit system, enabling automatic conversion between units (e.g., KB to MB).",
             "type": "object",
             "patternProperties": {
                 "[A-Za-z0-9_-]*$": {
@@ -41,30 +47,37 @@
     "additionalProperties": false,
     "definitions": {
         "mv_param": {
+            "description": "A multivariate parameter definition used within presets.",
             "type": "object",
             "properties": {
                 "arg": {
+                    "description": "The parameter argument name.",
                     "type": "string",
                     "minLength": 1
                 },
                 "vals": {
+                    "description": "An array of values for this parameter.",
                     "type": "array",
                     "minItems": 1,
                     "uniqueItems": true,
                     "items": {
+                        "description": "A parameter value.",
                         "type": "string",
                         "minLength": 1
                     }
                 },
                 "role": {
+                    "description": "The engine role this parameter applies to.",
                     "type": "string",
                     "enum": ["client", "server", "all"]
                 },
                 "id": {
+                    "description": "An optional numeric identifier for this parameter.",
                     "type": "string",
                     "pattern": "^[1-9][0-9]*$"
                 },
                 "enabled": {
+                    "description": "Controls whether this parameter is active.",
                     "type": "string",
                     "enum": ["yes", "no"]
                 }
@@ -76,48 +89,60 @@
             "additionalProperties": false
         },
         "validation_obj": {
+            "description": "A validation rule that constrains the allowed values for one or more parameter arguments.",
             "type": "object",
             "properties": {
                 "args": {
+                    "description": "An array of parameter argument names that this validation applies to.",
                     "type": "array",
                     "minItems": 1,
                     "uniqueItems": true,
                     "items": {
+                        "description": "A parameter argument name.",
                         "type": "string",
                         "minLength": 1
                     }
                 },
                 "vals": {
+                    "description": "The allowed values, specified as either an array of explicit values or a single regex pattern string.",
                     "anyOf": [
                         {
+                            "description": "An array of explicitly allowed values.",
                             "type": "array",
                             "minItems": 1,
                             "uniqueItems": true,
                             "items": {
+                                "description": "An allowed value.",
                                 "type": "string",
                                 "minLength": 1
                                 }
                         },
                         {
+                            "description": "A regex pattern that parameter values must match.",
                             "type": "string",
                             "minLength": 1
                         }
                     ]
                 },
                 "description": {
+                    "description": "A human-readable description of what this validation rule enforces, shown in error messages when validation fails.",
                     "type": "string",
                     "minLength": 1
                 },
                 "convert": {
+                    "description": "A unit key from the 'units' section, indicating that values should be converted to a canonical unit before validation.",
                     "type": "string"
                 },
                 "transform": {
+                    "description": "A regex search-and-replace transformation applied to parameter values before validation.",
                     "type": "object",
                     "properties": {
                         "search": {
+                            "description": "The regex pattern to search for in the parameter value.",
                             "type": "string"
                         },
                          "replace": {
+                            "description": "The replacement string for matched patterns.",
                             "type": "string"
                         }
                     },
@@ -132,14 +157,17 @@
             "additionalProperties": false
         },
         "unit_obj": {
+            "description": "A unit conversion definition mapping unit names to their conversion factors relative to a base unit.",
             "type": "object",
             "minProperties": 1,
             "patternProperties": {
                 "[A-Za-z0-9_-]*$": {
+                    "description": "A unit category containing conversion factors.",
                     "type": "object",
                     "minProperties": 1,
                     "patternProperties": {
                         "[A-Za-z0-9_-]*$": {
+                            "description": "A conversion factor from this unit to the base unit.",
                             "type": "string"
                         }
                     },
