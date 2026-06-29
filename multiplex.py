@@ -20,6 +20,7 @@ EC_REQUIREMENTS_FAIL=3
 EC_VALIDATIONS_FAIL=4
 EC_REQ_SCHEMA_FAIL=5
 EC_EMPTY_SET_FAIL=6
+EC_OUTPUT_WRITE_FAIL=7
 
 validation_dict = {}
 convert_dict = {}
@@ -168,18 +169,18 @@ def load_param_sets(sets_block):
 def sanitize_set(obj):
     """Update set with roles and remove disabled params or entire set"""
 
-    for set_idx in range(0, len(obj)):
-
-        # remove param from the set obj if not enabled
-        if not param_enabled(obj[set_idx]):
-            del obj[set_idx]
+    result = []
+    for param in obj:
+        if not param_enabled(param):
             continue
 
         # default to client role if not specified
-        if "role" not in obj[set_idx]:
-            obj[set_idx]['role'] = "client"
+        if "role" not in param:
+            param['role'] = "client"
 
-    return obj
+        result.append(param)
+
+    return result
 
 def transform_param_val(param, val):
     """Param validation, transformation and conversion"""
