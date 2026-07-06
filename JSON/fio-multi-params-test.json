@@ -39,8 +39,7 @@
     ],
     "sets": [
         {
-            "include": "common-params",
-            "include": "crucible-defaults",
+            "include": ["common-params", "crucible-defaults"],
             "params": [
                 { "arg": "rw", "vals": [ "read", "write", "randread", "randwrite" ] },
                 { "arg": "ioengine", "vals": [ "sync" ] },
@@ -50,8 +49,7 @@
             ]
         },
         {
-            "include": "common-params",
-            "include": "crucible-defaults",
+            "include": ["common-params", "crucible-defaults"],
             "params": [
                 { "arg": "rw", "vals": [ "randrw" ] },
                 { "arg": "ioengine", "vals": [ "sync" ] },
