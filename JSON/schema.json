@@ -59,7 +59,7 @@
                 "description": "A parameter set that defines one test configuration.  Parameters inherited via 'include' are combined with the set's own parameters before Cartesian expansion.",
                 "type": "object",
                 "minItems": 1,
-                "uniqeueItems": true,
+                "uniqueItems": true,
                 "properties": {
                     "include": {
                         "description": "References to global-options groups whose parameters should be inherited by this set.  Can be a single group name or an array of group names.",
