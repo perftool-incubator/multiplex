@@ -53,7 +53,7 @@ class TestRequirements:
     def test_create_validation_dict(self, load_req):
         multiplex.create_validation_dict(load_req)
 
-        assert multiplex.validation_dict is not {}
+        assert multiplex.validation_dict != {}
         assert 'bs' in multiplex.validation_dict.keys()
 
     """Test if presets dict is successfully loaded"""
@@ -73,7 +73,7 @@ class TestRequirements:
     """Test if validation regex w/ single escape fails"""
     @pytest.mark.parametrize("load_req", [ req_single_escape ], indirect=True)
     @pytest.mark.xfail(reason="single escape raises an exception")
-    def test_create_validation_dict(self, load_req):
+    def test_create_validation_dict_single_escape(self, load_req):
         assert multiplex.load_json_file(load_req) is None
 
     """Test if validation dict has empty presets (which is ok)"""
@@ -81,7 +81,7 @@ class TestRequirements:
     def test_empty_presets(self, load_req):
         multiplex.create_validation_dict(load_req)
 
-        assert multiplex.validation_dict is not {}
+        assert multiplex.validation_dict != {}
         assert load_req['presets'] == {}
 
     """Test if requirements w/ empty presets validates schema (ok)"""

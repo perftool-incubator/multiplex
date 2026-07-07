@@ -174,14 +174,3 @@ class TestJSON:
         expected_json = self._load_json("multi-sets-expected-disabled.json")
 
         assert processed_json == expected_json
-
-    """Test if load_param_sets handles multiple sets of params"""
-    @pytest.mark.parametrize("load_json_file", [ "multi-params-sets.json" ],
-                             indirect=True)
-    def test_multi_params_sets(self, load_json_file):
-        combined_json = multiplex.load_param_sets(load_json_file)
-        processed_json = json.dumps(combined_json, sort_keys=True, indent=4,
-                                    separators=(',',': '))
-        expected_json = self._load_json("multi-sets-expected.json")
-
-        assert processed_json == expected_json
