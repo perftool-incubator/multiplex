@@ -1,42 +1,16 @@
 name: unittest
 
 on:
-  pull_request:
-    branches: [ master ]
+  workflow_call:
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.ref }}/unittest
-  cancel-in-progress: true
+permissions:
+  contents: read
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      only-docs: ${{ steps.filter.outputs.only_modified }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: filter
-        uses: tj-actions/changed-files@v47
-        with:
-          files: |
-            LICENSE
-            *.md
-            **/*.md
-            .github/rulesets/**
-            .github/workflows/run-crucible-tracking.yaml
-            .github/workflows/crucible-ci.yaml
-            .github/workflows/fork-check.yaml
-            .github/workflows/controller-build.yaml
-            .github/workflows/unittest.yaml
-            docs/**
-      - name: Display changes
-        run: echo '${{ toJSON(steps.filter.outputs) }}' | jq .
-
   multiplex-unittests:
     runs-on: ubuntu-latest
-    needs: changes
-    if: ${{ github.event.pull_request.head.repo.fork != true && (github.event_name == 'workflow_dispatch' || needs.changes.outputs.only-docs != 'true') }}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -56,22 +30,3 @@ jobs:
         with:
           name: report
           path: report.html
-
-  faux-unittest:
-    runs-on: ubuntu-latest
-    needs: changes
-    if: ${{ github.event.pull_request.head.repo.fork != true && github.event_name != 'workflow_dispatch' && needs.changes.outputs.only-docs == 'true' }}
-    steps:
-      - run: echo "faux-unittest-complete"
-
-  unittest-complete:
-    runs-on: ubuntu-latest
-    needs: [ multiplex-unittests, faux-unittest ]
-    if: always()
-    steps:
-      - name: Check Results
-        if: >-
-          contains(needs.*.result, 'failure') ||
-          contains(needs.*.result, 'cancelled')
-        run: exit 1
-      - run: echo "unittest-complete"
