@@ -13,6 +13,7 @@ Python 3 — single main file `multiplex.py` (~710 lines), no dependencies beyon
 | `params` | Default CLI arguments file (read by argparse `fromfile_prefix_chars`) |
 | `JSON/schema.json` | JSON schema for multi-value input validation |
 | `JSON/req-schema.json` | JSON schema for requirements file validation |
+| `JSON/flat-schema.json` | JSON schema for `--flat` mode input validation |
 
 ## Key Functions
 | Function | Purpose |
@@ -26,6 +27,7 @@ Python 3 — single main file `multiplex.py` (~710 lines), no dependencies beyon
 | `merge_repeatable_param()` | Shared by `merge_param()`: if the arg is repeatable, adds it (unless an exact duplicate is already present) and reports the case as handled; returns `False` for a non-repeatable arg so the caller applies its own replace-or-skip semantics |
 | `exact_duplicate_exists()` | Checks for a byte-for-byte identical (arg, vals, role, id) entry — used by both merge functions and essentials to avoid appending a repeatable arg that's already present |
 | `override_presets()` | Applies defaults, essentials, and named presets from requirements |
+| `apply_flat_params()` | `--flat` mode entry point: validates/converts/transforms/presets a flat `{arg, val}` list (single implicit set) via `override_presets()`, then `multiplex_sets()`/`convert_vals()` as usual — the path tools use instead of `load_param_sets()`'s `include` handling and the general multi-set pipeline |
 | `is_repeatable()` | Checks whether an arg was declared `repeatable` by a validation group |
 | `transform_param_val()` | Applies validation regex, unit conversion, and regex transformation |
 | `validate_schema()` | Validates input JSON against schema |
@@ -54,12 +56,14 @@ If the same arg is declared in more than one validation group, the last group pr
 - **Input**: JSON with `global-options` and `sets` arrays; params use `arg` and `vals` (multi-value list) keys, optional `role` (client/server/all), `id`, `enabled`
 - **Output**: JSON array of arrays; each inner array is one test iteration with single-value params using `arg`, `val`, and `role` keys
 - **Requirements** (optional): Defines `presets` (defaults, essentials, named), `validations` (regex, and optionally `repeatable`), and `units` (conversion factors)
+- **`--flat` mode**: an alternate CLI mode for consumers with no sets/include concept (e.g. rickshaw's tool integration) and, in practice, no sweep either (a tool's own params can never have more than one value — enforced by rickshaw's own schema, not by `--flat` mode itself). Input is a flat array of `{arg, val[, enabled]}`; output is `{arg, val}` only (`enabled` never survives to output). No `global-options`/`sets` wrapper; `role`/`id` are forced/dropped internally (see `apply_flat_params()`'s `force_role`), not accepted from the input. See `apply_flat_params()`.
 
 ## Tests
 Run from the project root with `pytest multiplex.py tests/*.py` (test files use hyphenated names like `test-json.py`, which pytest's default `test_*.py` discovery pattern won't find — the files must be passed explicitly, as CI's workflow does):
 - `tests/test-json.py` — Parameter loading, multiplexing, Cartesian expansion, value conversion
 - `tests/test-requirements.py` — Validation regex, presets, unit conversion, preset precedence
 - `tests/test-schema.py` — Schema validation for valid and invalid inputs
+- `tests/test-flat.py` — `apply_flat_params()`: own params, disabled filtering, defaults/essentials, repeatable occurrences
 - 60+ JSON fixtures in `tests/JSON/`
 
 ## Conventions

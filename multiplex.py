@@ -71,6 +71,13 @@ def process_options():
                         action = 'store_true',
                         help = 'Print debug messages to stderr')
 
+    parser.add_argument('--flat',
+                        action = 'store_true',
+                        help = 'Treat --input as a flat array of {arg, val'
+                               '[, enabled]} params (a single implicit set,'
+                               ' no include, no sweep) instead of the'
+                               ' general sets/global-options document')
+
     args = parser.parse_args()
     return args
 
@@ -440,6 +447,87 @@ def override_presets(json_obj, force_role=None):
 
     return json_obj
 
+def apply_flat_params(params, req_json=None):
+    """Validate/convert/transform a flat list of {arg, val[, enabled]}
+    params (single implicit set; no include, no sweep) against an
+    optional requirements file, applying defaults/essentials via
+    override_presets() -- the exact same function the general sets-based
+    pipeline uses, called on a one-element set list so its per-set loop
+    just runs once. This is the path tools use instead of
+    load_param_sets()'s include-handling and multiplex_set()'s
+    cartesian-product engine, neither of which tools need: a tool always
+    has exactly one implicit set, never uses 'include', and (enforced by
+    rickshaw's own tool-params.json schema) never has more than one value
+    per param. Role has no meaning for a tool, so every param (including
+    preset entries, via override_presets()'s force_role) is forced to
+    role 'all' rather than multiplex's general 'client' default, to avoid
+    spurious identity mismatches against a tool's own params.
+
+    Validates params/req_json against their schemas itself (exiting on
+    failure) rather than trusting the caller to have done so -- this is
+    meant to be called directly as a library function (as the test suite
+    already does), not just via main()'s --flat CLI branch, so it can't
+    rely on validation happening somewhere upstream.
+
+    Returns a flat list of {arg, val} dicts, or None if the resulting
+    param set is empty (matching override_presets()'s EC_EMPTY_SET_FAIL
+    convention)."""
+    if not validate_schema(params, "flat-schema.json"):
+        exit(EC_SCHEMA_FAIL)
+
+    if req_json is not None:
+        if not validate_schema(req_json, "req-schema.json"):
+            exit(EC_REQ_SCHEMA_FAIL)
+        # Each call represents one tool's own, independent requirements
+        # file -- reset everything a *previous* call may have populated
+        # so it can't silently leak into this one. Rickshaw only ever
+        # invokes multiplex via a fresh subprocess per tool today, so
+        # this isn't reachable in production, but the test suite (and
+        # any other direct-library caller) calls apply_flat_params()
+        # repeatedly in one process.
+        presets_dict.clear()
+        validation_dict.clear()
+        convert_dict.clear()
+        transform_dict.clear()
+        repeatable_args.clear()
+        create_validation_dict(req_json)
+        load_presets(req_json)
+
+    # Reshape val -> vals first (own_params is disposable, so the deep
+    # copy _resolve_param_list() does internally is enough protection for
+    # everything after this point; only the reshape itself must not
+    # mutate the caller's own params list). Routed through
+    # _resolve_param_list() (rather than an inline enabled-filtered loop)
+    # so a same-arg duplicate in a tool's own params -- the actual shape
+    # rickshaw's --flat invocation feeds through here -- gets the same
+    # diagnostic as the identical conflict in load_param_sets()'s own
+    # 'params' handling, defaults, essentials, and include.
+    own_params = []
+    for param in params:
+        p = dict(param)
+        p['vals'] = [p.pop('val')]
+        own_params.append(p)
+
+    param_set = []
+    for param in _resolve_param_list(own_params, "params", force_role='all'):
+        merge_param_own(param, param_set)
+
+    overridden = override_presets([param_set], force_role='all')
+    if overridden is None:
+        return None
+    param_set = overridden[0]
+
+    multiplexed = multiplex_sets([param_set])
+    if multiplexed is None or len(multiplexed) != 1:
+        log.error("Flat params resolved to %s combinations; expected "
+                  "exactly one (check for a multi-valued default/essential "
+                  "in the requirements file)."
+                  % (0 if multiplexed is None else len(multiplexed)))
+        exit(EC_VALIDATIONS_FAIL)
+
+    finalized = convert_vals(multiplexed)
+    return [{"arg": p["arg"], "val": p["val"]} for p in finalized[0]]
+
 def _identity_key(param):
     """Return the (arg, role, id) tuple used throughout this file to
     decide whether two params represent "the same" logical parameter.
@@ -632,6 +720,28 @@ def main():
         logging.basicConfig(level=logging.DEBUG, format=logformat)
     else:
         logging.basicConfig(level=logging.INFO, format=logformat)
+
+    if args.flat:
+        input_json = load_json_file(args.input)
+        if input_json is None:
+            return EC_JSON_FAIL
+
+        json_req = None
+        if args.req is not None:
+            json_req = load_json_file(args.req)
+            if json_req is None:
+                return EC_REQUIREMENTS_FAIL
+
+        # Schema validation for both input_json and json_req happens
+        # inside apply_flat_params() itself (it exits on failure), since
+        # it's meant to be safely callable as a library function too, not
+        # just from this CLI branch.
+        result = apply_flat_params(input_json, json_req)
+        if result is None:
+            return EC_EMPTY_SET_FAIL
+
+        dump_output(result)
+        return EC_SUCCESS
 
     input_json = load_json_file(args.input)
 

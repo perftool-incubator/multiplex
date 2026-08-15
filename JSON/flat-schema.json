@@ -1,0 +1,31 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://raw.githubusercontent.com/perftool-incubator/multiplex/master/flat-schema.json",
+    "title": "Multiplex Flat Input Schema",
+    "description": "Schema for --flat mode input: a single implicit set of arg/val pairs, with no sets/include/cartesian-product semantics. Used by consumers (e.g. rickshaw's tool integration) that need validation/preset support but never need multiple values, sweeps, or included parameter groups.",
+    "type": "array",
+    "uniqueItems": true,
+    "items": {
+        "description": "A single flat parameter: an argument name and its one value.",
+        "type": "object",
+        "properties": {
+            "arg": {
+                "description": "The parameter argument name.",
+                "type": "string",
+                "minLength": 1
+            },
+            "val": {
+                "description": "The value for this parameter argument.",
+                "type": "string",
+                "minLength": 1
+            },
+            "enabled": {
+                "description": "Controls whether this parameter is included. Defaults to 'yes' if not specified.",
+                "type": "string",
+                "enum": ["yes", "no"]
+            }
+        },
+        "required": ["arg", "val"],
+        "additionalProperties": false
+    }
+}
