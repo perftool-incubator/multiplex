@@ -1,0 +1,11 @@
+{
+    "global-options": [],
+    "sets": [
+        {
+            "params": [
+                { "arg": "sysfs-trace-setup", "vals": [ "echo 1 > /sys/kernel/debug/tracing/events/sched/enable" ] },
+                { "arg": "sysfs-trace-setup", "vals": [ "echo 1 > /sys/kernel/debug/tracing/events/irq/enable" ] }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,18 @@
+{
+    "global-options": [
+        {
+            "name": "common-params",
+            "params": [
+                { "arg": "bs", "vals": [ "4k" ] }
+            ]
+        }
+    ],
+    "sets": [
+        {
+            "include": "common-params",
+            "params": [
+                { "arg": "bs", "vals": [ "64k" ] }
+            ]
+        }
+    ]
+}

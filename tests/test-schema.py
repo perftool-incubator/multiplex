@@ -29,6 +29,20 @@ class TestSchema:
         rt = multiplex.validate_schema(load_json_file, "schema.json")
         assert rt == False
 
+    """Test that a requirements file with a valid 'repeatable' boolean
+    passes req-schema.json validation"""
+    @pytest.mark.parametrize("load_json_file", [ "requirements-repeatable.json" ], indirect=True)
+    def test_validate_req_schema_repeatable_good(self, load_json_file):
+        rt = multiplex.validate_schema(load_json_file, "req-schema.json")
+        assert rt == True
+
+    """Test that a requirements file with a non-boolean 'repeatable' value
+    fails req-schema.json validation"""
+    @pytest.mark.parametrize("load_json_file", [ "requirements-repeatable-bad.json" ], indirect=True)
+    def test_validate_req_schema_repeatable_bad(self, load_json_file):
+        rt = multiplex.validate_schema(load_json_file, "req-schema.json")
+        assert rt == False
+
     """Test if load_param_sets handles invalid ids"""
     @pytest.mark.parametrize("load_json_file", [ "params-ids-invalid.json",
                                                  "params-ids-invalid-2.json",

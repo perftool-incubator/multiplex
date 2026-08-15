@@ -129,7 +129,13 @@ The example below is a simplified version of fio benchmark requirements file:
 ```
 
 The order of precedence for overriding params is the following:
-    1. `essentials`: always use params, override defined params.
+    1. `essentials`: always guarantee the presence of these params. For a
+       param whose arg is not declared `repeatable` (see `validations`
+       below), this overrides an existing param sharing the same
+       arg/role/id, or is appended if absent. For a `repeatable` arg, the
+       essential is added alongside any existing occurrences instead of
+       replacing them, since a repeatable arg can legitimately appear more
+       than once.
     2. `sets`: param sets defined in the input file override all params
        defined elsewhere.
     3. `global-options`: params included override `presets`.
@@ -159,8 +165,13 @@ only appended to the param set, after loading presets, if the set is empty.
 #### essentials
 The `essentials` parameters are the minimum parameters that the test harness
 need to function properly. Theses parameters are always appended to the list of
-parameters to use to guarantee basic functionality of the harness. These
-params override params already defined elsewhere.
+parameters to use to guarantee basic functionality of the harness. For an arg
+that isn't declared `repeatable`, an essential overrides an existing param
+sharing the same arg/role/id (a role/id, when specified, scopes what an
+essential affects — it never overrides a different role/id). For a
+`repeatable` arg, the essential is unioned with what's already there instead
+of replacing it, since essentials guarantee presence, not exclusivity, and a
+repeatable arg can legitimately have more than one value.
 
 #### "named" presets
 The "named" `presets` are groups of parameters that helps users to test
@@ -185,6 +196,11 @@ Param transformation happens after the param conversion. If the `convert` key
 is "K", and tranformation replace is "KB", the value "1024" is first converted
 to K, "1K" and then transformed to KB, "1KB". The benchmark will receive the
 param value as "1KB".
+
+A validation group can also set `"repeatable": true` to declare that its args
+may legitimately be specified more than once within a single set (e.g.
+multiple independent setup/cleanup commands). See `essentials` above for how
+this affects override behavior.
 
 ### units
 Defines all the conversion units to each of the param types. Multiplex converts
