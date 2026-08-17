@@ -77,7 +77,7 @@
                     "pattern": "^[1-9][0-9]*$"
                 },
                 "enabled": {
-                    "description": "Controls whether this parameter is active.",
+                    "description": "Controls whether this parameter is active. Uses a 'yes'/'no' string rather than a native boolean for historical reasons (this format predates the Python implementation, from when the toolchain was Perl-based and had no boolean type) -- kept as-is for compatibility. Newer boolean-shaped fields (e.g. 'repeatable') use a native JSON boolean instead.",
                     "type": "string",
                     "enum": ["yes", "no"]
                 }
@@ -148,6 +148,10 @@
                     },
                     "required": [ "search", "replace" ],
                     "additionalProperties": false
+                },
+                "repeatable": {
+                    "description": "Whether the args in this group may legitimately be specified more than once within a single set (e.g. multiple independent setup commands). Repeatable args are always unioned -- duplicate occurrences within a set are never collapsed, and an 'essentials' preset for a repeatable arg adds its value if not already present rather than replacing what's there. Defaults to false: an arg not marked repeatable keeps the original single-occurrence behavior (duplicates collapse to the last one, essentials replace outright).",
+                    "type": "boolean"
                 }
             },
             "required": [

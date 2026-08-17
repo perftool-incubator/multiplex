@@ -26,6 +26,24 @@ validation_dict = {}
 convert_dict = {}
 transform_dict = {}
 presets_dict = {}
+repeatable_args = {}
+
+# defined at module scope (not just inside main()) so any function using
+# log.* works whether or not main() has run -- e.g. when multiplex.py is
+# imported and its functions called directly, as the test suite does.
+# main()'s logging.basicConfig() call reconfigures the root logger's
+# level/format for CLI use, which this same logger picks up via the
+# standard logging hierarchy -- main() never needs to reassign `log`
+# itself, since logging.getLogger(__name__) always returns this same
+# object.
+log = logging.getLogger(__name__)
+
+def is_repeatable(arg):
+    """Defaults to False (the original single-occurrence contract) for
+    any arg the requirements file never mentions in a 'repeatable'
+    validation group, including when there's no requirements file at
+    all -- repeatability must be explicitly opted into, never assumed."""
+    return repeatable_args.get(arg, False)
 
 def process_options():
     """Process arguments from command line"""
@@ -52,6 +70,13 @@ def process_options():
     parser.add_argument('--debug',
                         action = 'store_true',
                         help = 'Print debug messages to stderr')
+
+    parser.add_argument('--flat',
+                        action = 'store_true',
+                        help = 'Treat --input as a flat array of {arg, val'
+                               '[, enabled]} params (a single implicit set,'
+                               ' no include, no sweep) instead of the'
+                               ' general sets/global-options document')
 
     args = parser.parse_args()
     return args
@@ -104,6 +129,14 @@ def param_validated(param, val):
                   "requirements file." % param)
     return valid
 
+def _merge_included_param(param, param_set):
+    """Deep-copy param and merge it via merge_param_include() unless it's
+    disabled -- shared by the 'include' and 'include-preset' handling in
+    load_param_sets() below, since both do exactly this."""
+    p = copy.deepcopy(param)
+    if param_enabled(p):
+        merge_param_include(p, param_set)
+
 def load_param_sets(sets_block):
     """Load params from sets block"""
     # mv_array (multi-value) is an array of param set arrays
@@ -131,35 +164,22 @@ def load_param_sets(sets_block):
                     # Include params if set name matches
                     if inc == global_opt['name']:
                         for global_param in global_opt['params']:
-                            # only include if param is not defined in this set
-                            gp = copy.deepcopy(global_param)
-                            if (param_enabled(gp) and not
-                                param_exists(gp, param_set)):
-                                param_set.append(gp)
+                            _merge_included_param(global_param, param_set)
 
         # handle named presets params included in each set
-        if 'include-preset' in set:
-            # Go find group of params in requirements presets
-            for preset_grp in presets_dict:
-                # Include params if named-preset group is found
-                if set['include-preset'] in presets_dict:
-                    for param_preset in presets_dict[set['include-preset']]:
-                        # only include if param is not defined in this set
-                        pp = copy.deepcopy(param_preset)
-                        if (param_enabled(pp) and not
-                            param_exists(pp, param_set)):
-                            param_set.append(pp)
+        if 'include-preset' in set and set['include-preset'] in presets_dict:
+            for param_preset in presets_dict[set['include-preset']]:
+                _merge_included_param(param_preset, param_set)
 
-        # handle params in each set
+        # handle params in each set. Resolved via _resolve_param_list()
+        # (rather than a plain enabled-filtered loop) so a same-arg
+        # duplicate within the set's own 'params' -- the single most
+        # likely place for a copy-paste mistake -- gets the same
+        # diagnostic as the identical shape of conflict in
+        # defaults/essentials/include.
         if 'params' in set:
-            for param in set['params']:
-                if param_enabled(param):
-                    replace_param = param_exists(param, param_set)
-                    if replace_param:
-                        idx = param_set.index(replace_param)
-                        param_set[idx] = param
-                    else:
-                        param_set.append(param)
+            for param in _resolve_param_list(set['params'], "params"):
+                merge_param_own(param, param_set)
 
         # mv_array is the outter array containing the inner sets
         mv_array.append(param_set)
@@ -319,41 +339,103 @@ def load_presets(json_req):
     if "presets" in json_req:
         presets_dict.update(json_req["presets"])
 
-def override_presets(json_obj):
-    """Override params w/ presets loaded from the requirements file"""
+def _resolve_param_list(entries, label, force_role=None):
+    """Return entries filtered to enabled ones only, each deep-copied so
+    callers can merge them freely without risk of mutating the original
+    list (e.g. presets_dict, or a set's own 'params' straight from the
+    input JSON). A disabled entry is excluded before duplicate-conflict
+    detection, not after -- it never reaches the target set at all, so
+    it must not be allowed to claim an (arg, role, id) identity that a
+    later, actually-enabled entry needs, and it must not trigger a false
+    conflict warning against an entry that's the only one really active.
+
+    If force_role is given, every entry's role is forced to it (id is
+    dropped entirely) before duplicate-conflict detection -- not after --
+    so the same identity is used both for detecting a conflict here and
+    for the eventual merge_param_own() call against a caller's own
+    params. Applying a role override only after resolving would let an
+    entry with a leftover/explicit role or id dodge the conflict check
+    here and then also fail to match (and therefore fail to override) an
+    unrelated same-arg entry at merge time. Used by callers with no
+    role/id concept of their own (see apply_flat_params()).
+
+    Also warns (using label to identify which list, e.g. 'defaults' or
+    'params') if two entries share the same non-repeatable
+    (arg, role, id) -- a likely requirements-file/mv-params authoring
+    mistake. The entries are still returned in order, so applying them
+    via merge_param_own() naturally makes the last one win, matching
+    this file's established last-group-wins convention
+    (validation_dict/convert_dict/transform_dict/repeatable_args)."""
+    resolved = []
+    seen = set()
+    for _entry in entries:
+        _entry = copy.deepcopy(_entry)
+        if force_role is not None:
+            _entry['role'] = force_role
+            _entry.pop('id', None)
+        if not param_enabled(_entry):
+            continue
+        if not is_repeatable(_entry["arg"]):
+            key = _identity_key(_entry)
+            if key in seen:
+                log.warning(
+                    "Multiple %s found for arg='%s' role='%s' id='%s'"
+                    " -- the last one takes effect."
+                    % ((label,) + key)
+                )
+            seen.add(key)
+        resolved.append(_entry)
+    return resolved
+
+def _resolve_preset_group(group_name, force_role=None):
+    """_resolve_param_list() over presets_dict[group_name] (defaults or
+    essentials) -- see _resolve_param_list() for the full contract. This
+    warns once per run (not once per target set, since a preset group is
+    a static property of the requirements file itself), unlike a set's
+    own 'params' (also resolved via _resolve_param_list(), see
+    load_param_sets()) which is necessarily a per-set check."""
+    return _resolve_param_list(presets_dict.get(group_name, []), group_name, force_role)
+
+def override_presets(json_obj, force_role=None):
+    """Override params w/ presets loaded from the requirements file. See
+    _resolve_preset_group() for what force_role does and why it must be
+    applied before conflict detection, not after."""
 
     if len(json_obj) == 0:
         json_obj = [[]]
 
-    for _json in json_obj:
-        # apply default params if empty set
-        if "defaults" in presets_dict:
-            if len(_json) == 0:
-                idx = json_obj.index(_json)
-                json_obj[idx] = copy.deepcopy(presets_dict["defaults"])
+    # _resolve_preset_group() already returns [] for a group that isn't
+    # in presets_dict at all, so no need to pre-check membership here.
+    _defaults = _resolve_preset_group("defaults", force_role)
+    _essentials = _resolve_preset_group("essentials", force_role)
 
     for _json in json_obj:
-        # append essential params, override duplicates
-        if "essentials" in presets_dict:
-            for _param in _json:
-                _ess = next((item for item in presets_dict["essentials"]
-                             if item["arg"] == _param["arg"]), False)
-                if _ess:
-                    # override param with essential
-                    idx = _json.index(_param)
-                    _json[idx] = _ess
+        # apply default params if empty set. Routed through
+        # merge_param_own() (instead of a verbatim deepcopy of the whole
+        # list) so a 'defaults' preset gets the same duplicate-collapsing
+        # protection as essentials/include/own-params -- an accidental
+        # same-arg duplicate in the requirements file's own 'defaults'
+        # preset would otherwise produce two conflicting values. Each
+        # default is deep-copied again here (on top of _resolve_preset_
+        # group()'s own copy) so every target set that ends up using
+        # defaults gets its own independent objects to mutate.
+        if len(_json) == 0:
+            idx = json_obj.index(_json)
+            new_default_set = []
+            for _default in _defaults:
+                merge_param_own(copy.deepcopy(_default), new_default_set)
+            json_obj[idx] = new_default_set
 
-                    # delete overriden param from essentials
-                    idx = presets_dict["essentials"].index(_ess)
-                    del presets_dict["essentials"][idx]
-
-            if len(_json) > 0:
-                # append essentials (new/undefined ones)
-                for _ess in presets_dict["essentials"]:
-                    _json.append(_ess)
-            else:
-                idx = json_obj.index(_json)
-                json_obj[idx] = copy.deepcopy(presets_dict["essentials"])
+    for _json in json_obj:
+        # apply essential params. _essentials is read-only here (never
+        # mutated) so the same essential independently applies to every
+        # set that needs it, not just the first one processed.
+        # merge_param_own() already implements exactly the semantics
+        # essentials need: a repeatable arg is unioned (added only if
+        # that exact value isn't already present), a non-repeatable arg
+        # replaces whatever's there (or is appended if absent).
+        for _ess in _essentials:
+            merge_param_own(copy.deepcopy(_ess), _json)
 
     # If after the overrides, we find an empty set, we cannot continue.
     for _json in json_obj:
@@ -365,37 +447,202 @@ def override_presets(json_obj):
 
     return json_obj
 
-def param_exists(param, set):
-    """Check if param is already defined in the set or it is a new one"""
+def apply_flat_params(params, req_json=None):
+    """Validate/convert/transform a flat list of {arg, val[, enabled]}
+    params (single implicit set; no include, no sweep) against an
+    optional requirements file, applying defaults/essentials via
+    override_presets() -- the exact same function the general sets-based
+    pipeline uses, called on a one-element set list so its per-set loop
+    just runs once. This is the path tools use instead of
+    load_param_sets()'s include-handling and multiplex_set()'s
+    cartesian-product engine, neither of which tools need: a tool always
+    has exactly one implicit set, never uses 'include', and (enforced by
+    rickshaw's own tool-params.json schema) never has more than one value
+    per param. Role has no meaning for a tool, so every param (including
+    preset entries, via override_presets()'s force_role) is forced to
+    role 'all' rather than multiplex's general 'client' default, to avoid
+    spurious identity mismatches against a tool's own params.
 
-    param_role = "client"
-    param_id = "1"
+    Validates params/req_json against their schemas itself (exiting on
+    failure) rather than trusting the caller to have done so -- this is
+    meant to be called directly as a library function (as the test suite
+    already does), not just via main()'s --flat CLI branch, so it can't
+    rely on validation happening somewhere upstream.
 
-    if "role" in param:
-        param_role = param["role"]
-    if "id" in param:
-        param_id = param["id"]
+    Returns a flat list of {arg, val} dicts, or None if the resulting
+    param set is empty (matching override_presets()'s EC_EMPTY_SET_FAIL
+    convention)."""
+    if not validate_schema(params, "flat-schema.json"):
+        exit(EC_SCHEMA_FAIL)
 
-    for p in set:
-        if param["arg"] == p["arg"]:
-            if "role" in p:
-                p_role = p["role"]
-            else:
-                p_role = "client"
-            if "id" in p:
-                p_id = p["id"]
-            else:
-                p_id = "1"
-            if param_role == p_role and param_id == p_id:
+    if req_json is not None:
+        if not validate_schema(req_json, "req-schema.json"):
+            exit(EC_REQ_SCHEMA_FAIL)
+        # Each call represents one tool's own, independent requirements
+        # file -- reset everything a *previous* call may have populated
+        # so it can't silently leak into this one. Rickshaw only ever
+        # invokes multiplex via a fresh subprocess per tool today, so
+        # this isn't reachable in production, but the test suite (and
+        # any other direct-library caller) calls apply_flat_params()
+        # repeatedly in one process.
+        presets_dict.clear()
+        validation_dict.clear()
+        convert_dict.clear()
+        transform_dict.clear()
+        repeatable_args.clear()
+        create_validation_dict(req_json)
+        load_presets(req_json)
+
+    # Reshape val -> vals first (own_params is disposable, so the deep
+    # copy _resolve_param_list() does internally is enough protection for
+    # everything after this point; only the reshape itself must not
+    # mutate the caller's own params list). Routed through
+    # _resolve_param_list() (rather than an inline enabled-filtered loop)
+    # so a same-arg duplicate in a tool's own params -- the actual shape
+    # rickshaw's --flat invocation feeds through here -- gets the same
+    # diagnostic as the identical conflict in load_param_sets()'s own
+    # 'params' handling, defaults, essentials, and include.
+    own_params = []
+    for param in params:
+        p = dict(param)
+        p['vals'] = [p.pop('val')]
+        own_params.append(p)
+
+    param_set = []
+    for param in _resolve_param_list(own_params, "params", force_role='all'):
+        merge_param_own(param, param_set)
+
+    overridden = override_presets([param_set], force_role='all')
+    if overridden is None:
+        return None
+    param_set = overridden[0]
+
+    multiplexed = multiplex_sets([param_set])
+    if multiplexed is None or len(multiplexed) != 1:
+        log.error("Flat params resolved to %s combinations; expected "
+                  "exactly one (check for a multi-valued default/essential "
+                  "in the requirements file)."
+                  % (0 if multiplexed is None else len(multiplexed)))
+        exit(EC_VALIDATIONS_FAIL)
+
+    finalized = convert_vals(multiplexed)
+    return [{"arg": p["arg"], "val": p["val"]} for p in finalized[0]]
+
+def _identity_key(param):
+    """Return the (arg, role, id) tuple used throughout this file to
+    decide whether two params represent "the same" logical parameter.
+    role/id default to "client"/"1" when absent, matching multiplex's
+    general default-role convention (see sanitize_set())."""
+    return (
+        param["arg"],
+        param.get("role", "client"),
+        param.get("id", "1"),
+    )
+
+def _find_by_identity(param, param_set, match_vals=False):
+    """Scan param_set for an entry matching param's (arg, role, id)
+    identity, optionally also requiring an identical 'vals'. Shared by
+    param_exists()/exact_duplicate_exists() so the two can never disagree
+    on what counts as "the same" param."""
+    key = _identity_key(param)
+    for p in param_set:
+        if _identity_key(p) == key:
+            if not match_vals or p.get("vals") == param.get("vals"):
                 return p
+    return None
 
-    return False
+def param_exists(param, set):
+    """Return the matching entry already in the set (by identity), or
+    None if param is a new one"""
+    return _find_by_identity(param, set)
+
+def exact_duplicate_exists(param, param_set):
+    """Check if an entry identical in arg, vals, role, and id already
+    exists in param_set. Used for repeatable args, where distinct
+    occurrences must all survive but a byte-for-byte duplicate (e.g. the
+    same param arriving via both 'include' and a set's own 'params')
+    would just run the same command twice for no reason."""
+    return _find_by_identity(param, param_set, match_vals=True) is not None
+
+def merge_repeatable_param(param, param_set):
+    """If param's arg is repeatable, add it to param_set (unless an exact
+    duplicate is already present) and report that the repeatable case was
+    handled. Returns False for a non-repeatable arg, leaving it to the
+    caller's own replace-or-skip semantics.
+
+    A repeatable arg may have multiple distinct occurrences, but each
+    occurrence must be single-valued -- sweeping a repeatable arg's own
+    values (multiple vals within one occurrence) has no defined meaning
+    yet (would it union all the values together, or multiply them against
+    other repeatable occurrences?) and is rejected outright rather than
+    silently producing a confusing cross-multiplied result."""
+    if not is_repeatable(param['arg']):
+        return False
+    if len(param.get('vals', [])) > 1:
+        log.error("Param '%s' is declared repeatable but has %d values in "
+                  "a single occurrence -- sweeping a repeatable arg's "
+                  "values is not supported. Declare each value as a "
+                  "separate occurrence instead."
+                  % (param['arg'], len(param['vals'])))
+        exit(EC_VALIDATIONS_FAIL)
+    if not exact_duplicate_exists(param, param_set):
+        param_set.append(param)
+    return True
+
+def merge_param(param, param_set, replace):
+    """Add param to param_set. A repeatable arg is always added (unless an
+    exact duplicate is already present) and never replaces anything. For a
+    non-repeatable arg: if replace is True, an existing same-arg/role/id
+    param is replaced (matching a set's own 'params' semantics); if False,
+    an existing param wins and this one is skipped (matching
+    'include'/'include-preset' semantics), logging a warning since two
+    included sources (two global-options groups, or 'include' vs
+    'include-preset') sharing an identity is a likely authoring mistake
+    -- unlike a set's own 'params' intentionally overriding an included
+    value, which is the normal, expected case and not warned about."""
+    if merge_repeatable_param(param, param_set):
+        return
+    existing = param_exists(param, param_set)
+    if existing:
+        if replace:
+            idx = param_set.index(existing)
+            param_set[idx] = param
+        else:
+            log.warning(
+                "Multiple included params found for arg='%s' role='%s' "
+                "id='%s' -- the first one takes effect."
+                % _identity_key(param)
+            )
+    else:
+        param_set.append(param)
+
+def merge_param_include(param, param_set):
+    """Add param to param_set, matching 'include'/'include-preset'
+    semantics: a same-arg/role/id param already present wins, this one is
+    skipped with a warning (unless the arg is repeatable -- see
+    merge_param())."""
+    merge_param(param, param_set, replace=False)
+
+def merge_param_own(param, param_set):
+    """Add param to param_set, matching a set's own 'params' semantics:
+    this entry replaces an existing same-arg/role/id param if present
+    (unless the arg is repeatable -- see merge_param())."""
+    merge_param(param, param_set, replace=True)
 
 def create_validation_dict(req_json):
     """Create validation dict from requirements"""
     validations = req_json["validations"]
     for _vgroup in validations:
+        _repeatable = validations[_vgroup].get("repeatable", False)
+
         for _param in validations[_vgroup]["args"]:
+            # last group to declare an arg wins, same conflict-resolution
+            # rule validation_dict/convert_dict/transform_dict already use
+            # below -- an arg isn't expected to appear in more than one
+            # group, but if it does, this keeps repeatable_args consistent
+            # with how the rest of this function resolves the same case
+            repeatable_args[_param] = _repeatable
+
             _vals = validations[_vgroup]["vals"]
             _pattern = { _param: _vals }
             validation_dict.update(_pattern)
@@ -467,14 +714,34 @@ def main():
     """Main function of multiplex"""
 
     global args
-    global log
 
     logformat = '%(asctime)s %(levelname)s %(name)s:  %(message)s'
     if args.debug:
         logging.basicConfig(level=logging.DEBUG, format=logformat)
     else:
         logging.basicConfig(level=logging.INFO, format=logformat)
-    log = logging.getLogger(__name__)
+
+    if args.flat:
+        input_json = load_json_file(args.input)
+        if input_json is None:
+            return EC_JSON_FAIL
+
+        json_req = None
+        if args.req is not None:
+            json_req = load_json_file(args.req)
+            if json_req is None:
+                return EC_REQUIREMENTS_FAIL
+
+        # Schema validation for both input_json and json_req happens
+        # inside apply_flat_params() itself (it exits on failure), since
+        # it's meant to be safely callable as a library function too, not
+        # just from this CLI branch.
+        result = apply_flat_params(input_json, json_req)
+        if result is None:
+            return EC_EMPTY_SET_FAIL
+
+        dump_output(result)
+        return EC_SUCCESS
 
     input_json = load_json_file(args.input)
 

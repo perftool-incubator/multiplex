@@ -1,0 +1,4 @@
+[
+    { "arg": "interval", "val": "10" },
+    { "arg": "subtools", "val": "turbostat", "enabled": "yes" }
+]

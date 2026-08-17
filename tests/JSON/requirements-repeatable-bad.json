@@ -1,0 +1,10 @@
+{
+    "validations": {
+        "sysfs_trace_commands": {
+            "description": "repeatable sysfs trace setup/cleanup shell commands",
+            "args": [ "sysfs-trace-setup", "sysfs-trace-cleanup" ],
+            "vals": ".+",
+            "repeatable": "yes"
+        }
+    }
+}

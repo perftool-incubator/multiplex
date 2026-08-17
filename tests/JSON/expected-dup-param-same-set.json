@@ -1,0 +1,14 @@
+[
+    [
+        {
+            "arg": "sysfs-trace-setup",
+            "role": "client",
+            "val": "echo 1 > /sys/kernel/debug/tracing/events/sched/enable"
+        },
+        {
+            "arg": "sysfs-trace-setup",
+            "role": "client",
+            "val": "echo 1 > /sys/kernel/debug/tracing/events/irq/enable"
+        }
+    ]
+]

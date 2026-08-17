@@ -1,0 +1,11 @@
+{
+    "global-options": [],
+    "sets": [
+        {
+            "params": [
+                { "arg": "bs", "vals": [ "4k" ] },
+                { "arg": "bs", "vals": [ "64k" ] }
+            ]
+        }
+    ]
+}
