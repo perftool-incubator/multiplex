@@ -58,6 +58,25 @@ def test_expand_parameters_reports_missing_global_option_structurally():
     assert "global-options" in error.value.message
 
 
+def test_expand_parameters_reports_invalid_requirement_regex_structurally():
+    requirements = {
+        "validations": {
+            "x-values": {
+                "args": ["x"],
+                "vals": "(",
+            }
+        }
+    }
+    document = {
+        "sets": [{"params": [{"arg": "x", "vals": ["value"]}]}]
+    }
+
+    with pytest.raises(multiplex.ExpansionError) as error:
+        multiplex.expand_parameters(document, requirements_json=requirements)
+
+    assert error.value.code == "invalid_requirements"
+
+
 def test_expand_parameters_does_not_leak_requirements_between_calls():
     requirements = {
         "validations": {

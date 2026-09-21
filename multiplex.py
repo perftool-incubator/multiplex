@@ -471,6 +471,16 @@ def expand_parameters(input_json, requirements_json=None, max_results=None):
                 "expansion_failed",
                 f"parameter expansion failed with exit code {exc.code}",
             ) from exc
+        except re.error as exc:
+            raise ExpansionError(
+                "invalid_requirements",
+                "requirements contain an invalid regular expression",
+            ) from exc
+        except Exception as exc:
+            raise ExpansionError(
+                "expansion_failed",
+                f"parameter expansion failed with {type(exc).__name__}",
+            ) from exc
         finally:
             _reset_expansion_state()
 
