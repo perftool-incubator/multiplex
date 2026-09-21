@@ -402,6 +402,32 @@ def _validate_global_option_includes(input_json):
                 )
 
 
+def _validate_requirement_regexes(requirements_json):
+    """Validate regex-based requirements before legacy expansion begins."""
+    for group_name, validation in requirements_json.get("validations", {}).items():
+        values = validation.get("vals")
+        if isinstance(values, str):
+            try:
+                re.compile(values)
+            except re.error as exc:
+                raise ExpansionError(
+                    "invalid_requirements",
+                    f"validation group {group_name} contains an invalid regular expression",
+                ) from exc
+
+        transform = validation.get("transform")
+        if transform is None:
+            continue
+        try:
+            pattern = re.compile(transform["search"])
+            pattern.sub(transform["replace"], "")
+        except re.error as exc:
+            raise ExpansionError(
+                "invalid_requirements",
+                f"validation group {group_name} contains an invalid transform regular expression",
+            ) from exc
+
+
 def expand_parameters(input_json, requirements_json=None, max_results=None):
     """Expand a multiplex document without invoking the CLI or writing files.
 
@@ -438,6 +464,7 @@ def expand_parameters(input_json, requirements_json=None, max_results=None):
                         "invalid_requirements",
                         "requirements_json does not match req-schema.json",
                     )
+                _validate_requirement_regexes(requirements_json)
                 create_validation_dict(copy.deepcopy(requirements_json))
                 load_presets(copy.deepcopy(requirements_json))
 
