@@ -50,6 +50,14 @@ def test_expand_parameters_reports_invalid_input_structurally():
     assert error.value.code == "invalid_input"
 
 
+def test_expand_parameters_reports_missing_global_option_structurally():
+    with pytest.raises(multiplex.ExpansionError) as error:
+        multiplex.expand_parameters({"sets": [{"include": "missing"}]})
+
+    assert error.value.code == "invalid_input"
+    assert "global-options" in error.value.message
+
+
 def test_expand_parameters_does_not_leak_requirements_between_calls():
     requirements = {
         "validations": {

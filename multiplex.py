@@ -385,6 +385,23 @@ def _reset_expansion_state():
     repeatable_args.clear()
 
 
+def _validate_global_option_includes(input_json):
+    """Reject references to global option groups that are not defined."""
+    global_options = input_json.get("global-options", [])
+    defined_names = {option["name"] for option in global_options}
+
+    for set_index, parameter_set in enumerate(input_json.get("sets", [])):
+        includes = parameter_set.get("include", [])
+        if isinstance(includes, str):
+            includes = [includes]
+        for name in includes:
+            if name not in defined_names:
+                raise ExpansionError(
+                    "invalid_input",
+                    f"set {set_index} references unknown global-options group: {name}",
+                )
+
+
 def expand_parameters(input_json, requirements_json=None, max_results=None):
     """Expand a multiplex document without invoking the CLI or writing files.
 
@@ -413,6 +430,7 @@ def expand_parameters(input_json, requirements_json=None, max_results=None):
         try:
             if not validate_schema(input_json, "schema.json"):
                 raise ExpansionError("invalid_input", "input_json does not match schema.json")
+            _validate_global_option_includes(input_json)
 
             if requirements_json is not None:
                 if not validate_schema(requirements_json, "req-schema.json"):
