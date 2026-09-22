@@ -8,6 +8,8 @@ import os
 import logging
 import re
 import itertools
+import math
+import threading
 
 from jsonschema import validate
 from jsonschema import exceptions
@@ -27,6 +29,17 @@ convert_dict = {}
 transform_dict = {}
 presets_dict = {}
 repeatable_args = {}
+
+_expansion_lock = threading.RLock()
+
+
+class ExpansionError(ValueError):
+    """A structured failure from the importable expansion API."""
+
+    def __init__(self, code, message):
+        super().__init__(message)
+        self.code = code
+        self.message = message
 
 # defined at module scope (not just inside main()) so any function using
 # log.* works whether or not main() has run -- e.g. when multiplex.py is
@@ -246,6 +259,11 @@ def transform_param_val(param, val):
 
 def multiplex_set(raw_set):
     """Transform one multi-value set into multiple single-value sets"""
+    return list(_multiplex_set_iter(raw_set))
+
+
+def _prepare_multiplex_set(raw_set):
+    """Normalize one set and validate/transform its values once."""
     # step 1: check role, remove disabled params
     obj = sanitize_set(raw_set)
     combinations = []
@@ -275,9 +293,27 @@ def multiplex_set(raw_set):
         # step 3: append lists to combinations outter list
         combinations.append(_list)
 
-    # step 4: update vals for all combinations
-    _obj = update_vals(obj, combinations)
-    return _obj
+    return obj, combinations
+
+
+def _multiplex_set_iter(raw_set):
+    """Yield one expanded set at a time without materializing the product."""
+    obj, combinations = _prepare_multiplex_set(raw_set)
+
+    # step 4: update vals for each combination. Keeping this iterator lazy
+    # lets callers enforce a response or cardinality bound before a large
+    # Cartesian product is materialized.
+    for combination in itertools.product(*combinations):
+        expanded = copy.deepcopy(obj)
+        for param_idx, param in enumerate(expanded):
+            param['vals'] = [combination[param_idx]]
+        yield expanded
+
+
+def _multiplex_set_count(raw_set):
+    """Return one set's Cartesian cardinality without building its product."""
+    _, combinations = _prepare_multiplex_set(raw_set)
+    return math.prod(len(values) for values in combinations)
 
 def update_vals(obj, combinations):
     """Update vals list with the cartesian product"""
@@ -315,13 +351,165 @@ def multiplex_sets(obj):
     multiplexed_sets = []
 
     for sets_idx in range(0, len(obj)):
-        new_set = multiplex_set(obj[sets_idx])
-        if new_set is None:
-            return None
-        if len(new_set):
-            multiplexed_sets += new_set
+        multiplexed_sets.extend(_multiplex_set_iter(obj[sets_idx]))
 
     return multiplexed_sets
+
+
+def multiplex_sets_bounded(obj, max_results):
+    """Expand sets up to ``max_results`` and report whether more exist.
+
+    The existing ``multiplex_sets`` API remains unbounded for CLI
+    compatibility. This variant stops before materializing the first result
+    beyond the caller's limit, which is the boundary needed by service APIs.
+    """
+    if isinstance(max_results, bool) or not isinstance(max_results, int) or max_results < 1:
+        raise ExpansionError("invalid_limit", "max_results must be a positive integer")
+
+    total_count = sum(_multiplex_set_count(param_set) for param_set in obj)
+    expanded = []
+    for param_set in obj:
+        for result in _multiplex_set_iter(param_set):
+            if len(expanded) >= max_results:
+                return expanded, True, total_count
+            expanded.append(result)
+    return expanded, False, total_count
+
+
+def _reset_expansion_state():
+    """Clear process-global requirement state used by the legacy functions."""
+    validation_dict.clear()
+    convert_dict.clear()
+    transform_dict.clear()
+    presets_dict.clear()
+    repeatable_args.clear()
+
+
+def _validate_global_option_includes(input_json):
+    """Reject references to global option groups that are not defined."""
+    global_options = input_json.get("global-options", [])
+    defined_names = {option["name"] for option in global_options}
+
+    for set_index, parameter_set in enumerate(input_json.get("sets", [])):
+        includes = parameter_set.get("include", [])
+        if isinstance(includes, str):
+            includes = [includes]
+        for name in includes:
+            if name not in defined_names:
+                raise ExpansionError(
+                    "invalid_input",
+                    f"set {set_index} references unknown global-options group: {name}",
+                )
+
+
+def _validate_requirement_regexes(requirements_json):
+    """Validate regex-based requirements before legacy expansion begins."""
+    for group_name, validation in requirements_json.get("validations", {}).items():
+        values = validation.get("vals")
+        if isinstance(values, str):
+            try:
+                re.compile(values)
+            except re.error as exc:
+                raise ExpansionError(
+                    "invalid_requirements",
+                    f"validation group {group_name} contains an invalid regular expression",
+                ) from exc
+
+        transform = validation.get("transform")
+        if transform is None:
+            continue
+        try:
+            pattern = re.compile(transform["search"])
+            pattern.sub(transform["replace"], "")
+        except re.error as exc:
+            raise ExpansionError(
+                "invalid_requirements",
+                f"validation group {group_name} contains an invalid transform regular expression",
+            ) from exc
+
+
+def expand_parameters(input_json, requirements_json=None, max_results=None):
+    """Expand a multiplex document without invoking the CLI or writing files.
+
+    ``input_json`` and ``requirements_json`` are treated as immutable. The
+    returned ``sets`` contain the same single-valued parameter objects emitted
+    by the command-line pipeline. When ``max_results`` is provided, ``sets``
+    is a bounded prefix and ``truncated`` indicates that more expansions were
+    available.
+
+    The legacy implementation stores requirement state in module globals and
+    several validation paths use ``SystemExit`` for CLI compatibility. A
+    re-entrant lock makes this adapter safe for concurrent library callers,
+    while the state reset and structured exception keep calls isolated.
+    """
+    if not isinstance(input_json, dict):
+        raise ExpansionError("invalid_input", "input_json must be an object")
+    if requirements_json is not None and not isinstance(requirements_json, dict):
+        raise ExpansionError("invalid_requirements", "requirements_json must be an object")
+    if max_results is not None and (
+        isinstance(max_results, bool) or not isinstance(max_results, int) or max_results < 1
+    ):
+        raise ExpansionError("invalid_limit", "max_results must be a positive integer")
+
+    with _expansion_lock:
+        _reset_expansion_state()
+        try:
+            if not validate_schema(input_json, "schema.json"):
+                raise ExpansionError("invalid_input", "input_json does not match schema.json")
+            _validate_global_option_includes(input_json)
+
+            if requirements_json is not None:
+                if not validate_schema(requirements_json, "req-schema.json"):
+                    raise ExpansionError(
+                        "invalid_requirements",
+                        "requirements_json does not match req-schema.json",
+                    )
+                _validate_requirement_regexes(requirements_json)
+                create_validation_dict(copy.deepcopy(requirements_json))
+                load_presets(copy.deepcopy(requirements_json))
+
+            combined = load_param_sets(copy.deepcopy(input_json))
+            overridden = override_presets(combined)
+            if overridden is None:
+                raise ExpansionError(
+                    "empty_expansion",
+                    "input produced an empty parameter set",
+                )
+
+            if max_results is None:
+                expanded = multiplex_sets(overridden)
+                truncated = False
+                total_count = len(expanded)
+            else:
+                expanded, truncated, total_count = multiplex_sets_bounded(
+                    overridden, max_results
+                )
+
+            return {
+                "sets": convert_vals(expanded),
+                "count": total_count,
+                "returned": len(expanded),
+                "truncated": truncated,
+            }
+        except ExpansionError:
+            raise
+        except SystemExit as exc:
+            raise ExpansionError(
+                "expansion_failed",
+                f"parameter expansion failed with exit code {exc.code}",
+            ) from exc
+        except re.error as exc:
+            raise ExpansionError(
+                "invalid_requirements",
+                "requirements contain an invalid regular expression",
+            ) from exc
+        except Exception as exc:
+            raise ExpansionError(
+                "expansion_failed",
+                f"parameter expansion failed with {type(exc).__name__}",
+            ) from exc
+        finally:
+            _reset_expansion_state()
 
 def convert_vals(obj):
     """Convert vals into val for each single-value set"""
@@ -690,8 +878,7 @@ def validate_schema(input_json, schema_file):
         schema_fp.close()
         validate(instance = input_json, schema = schema_contents)
     except:
-        log.exception("JSON validation failed for %s using schema %s"
-                      % (input_json, json_schema_file))
+        log.exception("JSON validation failed using schema %s", json_schema_file)
         return False
     return True
 
