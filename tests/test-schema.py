@@ -29,6 +29,13 @@ class TestSchema:
         rt = multiplex.validate_schema(load_json_file, "schema.json")
         assert rt == False
 
+    def test_schema_documents_client_role_default(self):
+        schema = multiplex.load_json_file("JSON/schema.json")
+        description = schema["definitions"]["mv_param"]["properties"]["role"]["description"]
+
+        assert "Omitting 'role' defaults to 'client'" in description
+        assert "'all' (default)" not in description
+
     """Test that a requirements file with a valid 'repeatable' boolean
     passes req-schema.json validation"""
     @pytest.mark.parametrize("load_json_file", [ "requirements-repeatable.json" ], indirect=True)
