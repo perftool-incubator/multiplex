@@ -128,7 +128,7 @@
                     }
                 },
                 "role": {
-                    "description": "The engine role this parameter applies to.  'client' and 'server' restrict the parameter to that role, while 'all' (default) applies it to every engine.",
+                    "description": "The engine role this parameter applies to.  'client' and 'server' restrict the parameter to that role, while 'all' applies it to every engine.  Omitting 'role' defaults to 'client'; specify 'all' explicitly to target every engine.",
                     "type": "string",
                     "enum": ["client", "server", "all"]
                 },
